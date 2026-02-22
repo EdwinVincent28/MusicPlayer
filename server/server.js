@@ -8,6 +8,8 @@ const mongoose = require('mongoose')
 app.use(cors())
 app.use(express.json())
 
+const publicRoutes = require('./routes/public')
+
 mongoose.connect(process.env.MONGO_URI, {
         dbName: 'music-player-db'
     })
@@ -19,3 +21,5 @@ mongoose.connect(process.env.MONGO_URI, {
     .catch((err) => {
         console.error("Failed to connect to MongoDB:", err);
 });
+
+app.use('/api/public', publicRoutes);
