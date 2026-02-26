@@ -3,21 +3,25 @@ const bcrypt = require('bcrypt');
 const validator = require('validator');
 
 const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
-  password: {type: String, required: true},
-  
-  likedSongs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Song' }],
+    username: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true },
+    password: {type: String, required: true},
+    profileImage: {
+            type: String,
+            default: null
+    },
+    
+    likedSongs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Song' }],
 
-  followedArtists: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Artist' }],
-  
-  stats: {
-    totalPlayCount: { type: Number, default: 0 },
-    totalListeningTime: { type: Number, default: 0 }
-  }
+    followedArtists: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Artist' }],
+    
+    stats: {
+        totalPlayCount: { type: Number, default: 0 },
+        totalListeningTime: { type: Number, default: 0 }
+    }
 }, { timestamps: true });
 
-userSchema.statics.signup = async function(username, email, password){
+userSchema.statics.signup = async function(username, email, password, profileImage){
 
     if(!email || !password || !username){
         throw Error('Fill all the fields');
@@ -35,7 +39,12 @@ userSchema.statics.signup = async function(username, email, password){
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(password, salt);
 
-    const user = await this.create({username, email, password: hash})
+    const user = await this.create({
+        username, 
+        email, 
+        password: hash, 
+        profileImage 
+    });
 
     return user;
 }

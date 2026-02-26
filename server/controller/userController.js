@@ -8,13 +8,14 @@ const createJWT = (_id) => {
 
 const signupUser = async (req, res ) => {
     const {username, email, password} = req.body;
+    const profileImage = req.file ? req.file.path.replace(/\\/g, "/") : null;
 
     try{
-        const user = await User.signup(username, email, password);
+        const user = await User.signup(username, email, password, profileImage);
 
         const token = createJWT(user._id);
         // console.log(token);
-        res.status(200).json({email, token}); 
+        res.status(200).json({user, token}); 
 
     } 
     catch (error) {

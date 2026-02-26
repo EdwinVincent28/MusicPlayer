@@ -5,8 +5,9 @@ const app = express()
 const cors = require('cors')
 const mongoose = require('mongoose')
 
-app.use(cors())
-app.use(express.json())
+app.use(cors());
+app.use(express.json());
+app.use('/uploads', express.static('uploads'));
 
 const publicRoutes = require('./routes/public')
 
