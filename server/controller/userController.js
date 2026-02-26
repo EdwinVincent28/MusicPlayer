@@ -39,4 +39,34 @@ const loginUser = async (req, res ) => {
     }
 }
 
-module.exports = {loginUser, signupUser}
+const toggleLikeSong = async (req, res) => {
+    const userId = req.user._id; 
+    const { trackId } = req.body; 
+
+    try {
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const isLiked = user.likedSongs.includes(trackId);
+
+        if (isLiked) {
+            await User.findByIdAndUpdate(userId, {
+                $pull: { likedSongs: trackId }
+            });
+            res.status(200).json({ message: 'Song removed from Liked Songs' });
+        } else {
+            await User.findByIdAndUpdate(userId, {
+                $addToSet: { likedSongs: trackId }
+            });
+            res.status(200).json({ message: 'Song added to Liked Songs' });
+        }
+
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = {loginUser, signupUser, toggleLikeSong}

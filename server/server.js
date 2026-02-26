@@ -10,6 +10,8 @@ app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
 const publicRoutes = require('./routes/public')
+const userRoutes = require('./routes/user')
+const playlistRoutes = require('./routes/playlist')
 
 mongoose.connect(process.env.MONGO_URI, {
         dbName: 'music-player-db'
@@ -24,3 +26,5 @@ mongoose.connect(process.env.MONGO_URI, {
 });
 
 app.use('/api/public', publicRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/playlist', playlistRoutes);

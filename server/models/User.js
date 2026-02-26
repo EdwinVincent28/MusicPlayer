@@ -11,14 +11,22 @@ const userSchema = new mongoose.Schema({
             default: null
     },
     
-    likedSongs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Song' }],
+    playlists: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Playlist'
+    }],
 
-    followedArtists: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Artist' }],
-    
-    stats: {
-        totalPlayCount: { type: Number, default: 0 },
-        totalListeningTime: { type: Number, default: 0 }
-    }
+    likedSongs: [{
+        type: Number 
+    }],
+
+    followedArtists: [{
+        type: Number 
+    }],
+
+    historySongs: [{
+        type: Number
+    }]
 }, { timestamps: true });
 
 userSchema.statics.signup = async function(username, email, password, profileImage){
