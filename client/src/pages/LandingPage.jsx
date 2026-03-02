@@ -1,9 +1,13 @@
 import Sidebar from "@/components/Sidebar.jsx";
 import PlaylistCard from "@/components/PlaylistCard.jsx";
 import MusicPlayer from "@/components/MusicPlayer.jsx";
-import { Play, TrendingUp, Clock, MoreHorizontal } from "lucide-react";
+import { Play, TrendingUp, Clock, MoreHorizontal, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import axios from "axios";
+
+let controller = null;
 
 const playlists = [
 	{
@@ -100,6 +104,48 @@ const trendingTracks = [
 ];
 
 function LandingPage() {
+	const [query, setQuery] = useState("");
+	const [results, setResults] = useState([]);
+	const [loading, setLoading] = useState(false);
+
+	useEffect(() => {
+		// Set a timer to trigger the search
+		const delayDebounceFn = setTimeout(() => {
+			if (query.trim()) {
+				searchTracks(query);
+			}
+		}, 50000); // Wait for 500ms of "silence"
+
+		// Cleanup: This cancels the timer if the user types again before 500ms
+		return () => clearTimeout(delayDebounceFn);
+	}, [query]);
+
+	const searchTracks = async (searchTerm) => {
+		// If there's a previous request, abort it
+		if (controller) {
+			controller.abort();
+		}
+
+		// Create a new controller for the current request
+		controller = new AbortController();
+
+		try {
+			const response = await axios.get(
+				`https://corsproxy.io/?https://api.deezer.com/search?q=${searchTerm}`,
+				{
+					signal: controller.signal, // Link the request to the controller
+				},
+			);
+			console.log(response.data);
+		} catch (error) {
+			if (axios.isCancel(error)) {
+				console.log("Request canceled successfully");
+			} else {
+				console.error("Actual search error:", error);
+			}
+		}
+	};
+
 	return (
 		<div className="flex bg-zinc-950 min-h-screen text-white">
 			<Sidebar />
@@ -108,7 +154,7 @@ function LandingPage() {
 			<div className="flex-1 overflow-y-auto pb-28">
 				{/* Top bar */}
 				<div className="sticky top-0 z-10 bg-zinc-950/80 backdrop-blur-xl px-8 py-4 flex items-center justify-between border-b border-white/5">
-					<div className="flex gap-3">
+					{/* <div className="flex gap-3">
 						{["All", "Music", "Podcasts", "Live"].map((tab, i) => (
 							<button
 								key={tab}
@@ -121,6 +167,59 @@ function LandingPage() {
 								{tab}
 							</button>
 						))}
+					</div> */}
+					<div className="relative w-full max-w-md">
+						<input
+							type="text"
+							placeholder="Search songs, artists..."
+							value={query}
+							onChange={(e) => setQuery(e.target.value)}
+							className="w-full bg-zinc-800/70 text-white placeholder-zinc-400 
+               px-4 py-2.5 pl-10 rounded-full 
+               focus:outline-none focus:ring-2 
+               focus:ring-violet-500/50 transition-all"
+						/>
+
+						<Search
+							size={18}
+							className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+						/>
+
+						{/* Dropdown */}
+						{query && (
+							<div className="absolute top-14 w-full bg-zinc-900 border border-white/5 rounded-xl shadow-xl max-h-80 overflow-y-auto">
+								{loading && (
+									<p className="p-4 text-sm text-zinc-400">Searching...</p>
+								)}
+
+								{!loading && results.length === 0 && (
+									<p className="p-4 text-sm text-zinc-400">No results found</p>
+								)}
+
+								{!loading &&
+									results.slice(0, 8).map((track) => (
+										<div
+											key={track.id}
+											className="flex items-center gap-3 p-3 hover:bg-white/5 cursor-pointer transition-colors"
+										>
+											<img
+												src={track.album.cover_small}
+												alt={track.title}
+												className="w-10 h-10 rounded-md"
+											/>
+
+											<div className="min-w-0">
+												<p className="text-sm text-white truncate">
+													{track.title}
+												</p>
+												<p className="text-xs text-zinc-400 truncate">
+													{track.artist.name}
+												</p>
+											</div>
+										</div>
+									))}
+							</div>
+						)}
 					</div>
 					<div className="flex items-center gap-3">
 						<div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 ring-2 ring-violet-500/30" />
