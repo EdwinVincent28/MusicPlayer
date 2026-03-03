@@ -136,7 +136,7 @@ function LandingPage() {
         setLoading(true);
         try {
             const response = await axios.get(
-                `http://localhost:4000/api/deezer/search?q=${searchTerm}`,
+                `/api/deezer/search?q=${searchTerm}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`, 
@@ -198,7 +198,7 @@ function LandingPage() {
 
 						{/* Dropdown */}
 						{query && (
-							<div className="absolute top-14 w-full bg-zinc-900 border border-white/5 rounded-xl shadow-xl max-h-80 overflow-y-auto">
+							<div className="absolute top-14 w-full bg-zinc-900 border border-white/5 rounded-xl shadow-xl max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden">
 								{loading && (
 									<p className="p-4 text-sm text-zinc-400">Searching...</p>
 								)}
@@ -211,7 +211,12 @@ function LandingPage() {
 									results.slice(0, 8).map((track) => (
 										<div
 											key={track.id}
-											onClick={() => playTrack(track)}
+											onClick={() => {
+												playTrack(track)
+												setQuery("")
+  												setResults([])
+											} 
+											}
 											className="flex items-center gap-3 p-3 hover:bg-white/5 cursor-pointer transition-colors"
 										>
 											<img

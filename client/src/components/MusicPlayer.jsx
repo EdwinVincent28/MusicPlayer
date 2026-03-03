@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import {
 	Play,
 	Pause,
@@ -16,6 +17,41 @@ import { usePlayer } from "../context/PlayerContext";
 export default function MusicPlayer() {
     const { currentTrack, playing, progress, duration, volume, togglePlay, seek, setVolume, formatTime } = usePlayer();
     const [liked, setLiked] = useState(false);
+
+    useEffect(() => {
+        if (!currentTrack) return;
+
+        const fetchLikeStatus = async () => {
+            try {
+                const { data } = await axios.get(`/api/user/like/${currentTrack.id}`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                });
+                setLiked(data.isLiked);
+            } catch (err) {
+                console.error("Failed to fetch like status", err);
+            }
+        };
+
+        fetchLikeStatus();
+    }, [currentTrack]);
+
+    const handleLikeToggle = async () => {
+        try {
+            await axios.put("/api/user/like",
+                { trackId: currentTrack.id },
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                }
+            );
+            setLiked((prev) => !prev);
+        } catch (err) {
+            console.error("Failed to toggle like", err);
+        }
+    };
 
     if (!currentTrack) return null; 
 
@@ -41,7 +77,7 @@ export default function MusicPlayer() {
                     </p>
                 </div>
                 <button
-                    onClick={() => setLiked(!liked)}
+                    onClick={handleLikeToggle}
                     className={`ml-auto shrink-0 transition-colors duration-200 ${liked ? "text-violet-400" : "text-zinc-600 hover:text-zinc-300"}`}
                 >
                     <Heart size={18} fill={liked ? "currentColor" : "none"} />

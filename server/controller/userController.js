@@ -40,33 +40,44 @@ const loginUser = async (req, res ) => {
 }
 
 const toggleLikeSong = async (req, res) => {
-    const userId = req.user._id; 
-    const { trackId } = req.body; 
+    const userId = req.user._id;
+    const { trackId } = req.body;
 
     try {
         const user = await User.findById(userId);
-        
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
+        if (!user) return res.status(404).json({ error: 'User not found' });
 
-        const isLiked = user.likedSongs.includes(trackId);
+        if (!user.likedSongs) user.likedSongs = new Map();
+
+        const key = trackId.toString();
+        const isLiked = user.likedSongs.has(key);
 
         if (isLiked) {
-            await User.findByIdAndUpdate(userId, {
-                $pull: { likedSongs: trackId }
-            });
-            res.status(200).json({ message: 'Song removed from Liked Songs' });
+            user.likedSongs.delete(key);
         } else {
-            await User.findByIdAndUpdate(userId, {
-                $addToSet: { likedSongs: trackId }
-            });
-            res.status(200).json({ message: 'Song added to Liked Songs' });
+            user.likedSongs.set(key, true);
         }
+
+        await user.save();
+        res.status(200).json({ message: isLiked ? 'Song removed from Liked Songs' : 'Song added to Liked Songs' });
 
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 };
 
-module.exports = {loginUser, signupUser, toggleLikeSong}
+const isLikedSong = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        if (!user.likedSongs) return res.status(200).json({ isLiked: false });
+
+        const isLiked = user.likedSongs.has(req.params.trackId.toString());
+        res.status(200).json({ isLiked });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = {loginUser, signupUser, toggleLikeSong, isLikedSong}

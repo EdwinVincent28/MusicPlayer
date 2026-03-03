@@ -16,17 +16,23 @@ const userSchema = new mongoose.Schema({
         ref: 'Playlist'
     }],
 
-    likedSongs: [{
-        type: Number 
-    }],
+    likedSongs: {
+        type: Map,
+        of: Boolean,
+        default: {}
+    },
 
-    followedArtists: [{
-        type: Number 
-    }],
+    followedArtists: {
+        type: Map,
+        of: Boolean,
+        default: {}
+    },
 
-    historySongs: [{
-        type: Number
-    }]
+    historySongs: {
+        type: Map,
+        of: Boolean,
+        default: {}
+    }
 }, { timestamps: true });
 
 userSchema.statics.signup = async function(username, email, password, profileImage){
