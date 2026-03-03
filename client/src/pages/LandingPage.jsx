@@ -4,10 +4,8 @@ import MusicPlayer from "@/components/MusicPlayer.jsx";
 import { Play, TrendingUp, Clock, MoreHorizontal, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
-
-let controller = null;
 
 const playlists = [
 	{
@@ -104,47 +102,57 @@ const trendingTracks = [
 ];
 
 function LandingPage() {
-	const [query, setQuery] = useState("");
-	const [results, setResults] = useState([]);
-	const [loading, setLoading] = useState(false);
+    const [query, setQuery] = useState("");
+    const [results, setResults] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const controllerRef = useRef(null); 
 
-	useEffect(() => {
-		// Set a timer to trigger the search
-		const delayDebounceFn = setTimeout(() => {
-			if (query.trim()) {
-				searchTracks(query);
-			}
-		}, 50000); // Wait for 500ms of "silence"
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            if (query.trim()) {
+                searchTracks(query);
+            } else {
+                setResults([]);
+            }
+        }, 500); 
 
-		// Cleanup: This cancels the timer if the user types again before 500ms
-		return () => clearTimeout(delayDebounceFn);
-	}, [query]);
+        return () => clearTimeout(delayDebounceFn);
+    }, [query]);
 
-	const searchTracks = async (searchTerm) => {
-		// If there's a previous request, abort it
-		if (controller) {
-			controller.abort();
-		}
+    const searchTracks = async (searchTerm) => {
+        // Cancel previous request if still in flight
+        if (controllerRef.current) {
+            controllerRef.current.abort();
+        }
 
-		// Create a new controller for the current request
-		controller = new AbortController();
+        // Create a new controller for the current request
+        controllerRef.current = new AbortController();
 
-		try {
-			const response = await axios.get(
-				`https://corsproxy.io/?https://api.deezer.com/search?q=${searchTerm}`,
-				{
-					signal: controller.signal, // Link the request to the controller
-				},
-			);
-			console.log(response.data);
-		} catch (error) {
-			if (axios.isCancel(error)) {
-				console.log("Request canceled successfully");
-			} else {
-				console.error("Actual search error:", error);
-			}
-		}
-	};
+        const token = localStorage.getItem("token"); 
+
+        setLoading(true);
+        try {
+            const response = await axios.get(
+                `http://localhost:4000/api/deezer/search?q=${searchTerm}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`, 
+                    },
+                    signal: controllerRef.current.signal,
+                },
+            );
+            setResults(response.data.results); 
+            console.log(response.data);
+        } catch (error) {
+            if (axios.isCancel(error)) {
+                console.log("Request canceled successfully");
+            } else {
+                console.error("Actual search error:", error);
+            }
+        } finally {
+            setLoading(false); 
+        }
+    };
 
 	return (
 		<div className="flex bg-zinc-950 min-h-screen text-white">
@@ -203,7 +211,7 @@ function LandingPage() {
 											className="flex items-center gap-3 p-3 hover:bg-white/5 cursor-pointer transition-colors"
 										>
 											<img
-												src={track.album.cover_small}
+												src={track.album.cover}
 												alt={track.title}
 												className="w-10 h-10 rounded-md"
 											/>
