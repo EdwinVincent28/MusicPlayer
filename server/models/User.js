@@ -18,7 +18,13 @@ const userSchema = new mongoose.Schema({
 
     likedSongs: {
         type: Map,
-        of: Boolean,
+        of: new mongoose.Schema({
+            title: String,
+            artist: String,
+            cover: String,
+            preview: String,
+            // duration: Number,
+        }, { _id: false }),
         default: {}
     },
 

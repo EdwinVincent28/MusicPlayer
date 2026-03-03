@@ -37,21 +37,28 @@ export default function MusicPlayer() {
         fetchLikeStatus();
     }, [currentTrack]);
 
-    const handleLikeToggle = async () => {
-        try {
-            await axios.put("/api/user/like",
-                { trackId: currentTrack.id },
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
-                }
-            );
-            setLiked((prev) => !prev);
-        } catch (err) {
-            console.error("Failed to toggle like", err);
-        }
-    };
+const handleLikeToggle = async () => {
+    try {
+        await axios.put("/api/user/like",
+            {
+                trackId: currentTrack.id,
+                title: currentTrack.title,
+                artist: currentTrack.artist.name,
+                cover: currentTrack.album.cover,
+                preview: currentTrack.preview,
+                // duration: currentTrack.duration,
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            }
+        );
+        setLiked((prev) => !prev);
+    } catch (err) {
+        console.error("Failed to toggle like", err);
+    }
+};
 
     if (!currentTrack) return null; 
 

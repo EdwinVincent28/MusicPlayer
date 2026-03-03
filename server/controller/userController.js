@@ -41,7 +41,7 @@ const loginUser = async (req, res ) => {
 
 const toggleLikeSong = async (req, res) => {
     const userId = req.user._id;
-    const { trackId } = req.body;
+    const { trackId, title, artist, cover, preview, duration } = req.body;
 
     try {
         const user = await User.findById(userId);
@@ -55,7 +55,7 @@ const toggleLikeSong = async (req, res) => {
         if (isLiked) {
             user.likedSongs.delete(key);
         } else {
-            user.likedSongs.set(key, true);
+            user.likedSongs.set(key, { title, artist, cover, preview, duration });
         }
 
         await user.save();
@@ -80,4 +80,20 @@ const isLikedSong = async (req, res) => {
     }
 };
 
-module.exports = {loginUser, signupUser, toggleLikeSong, isLikedSong}
+const getLikedSongs = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const songs = [];
+        user.likedSongs.forEach((trackData, trackId) => {
+            songs.push({ id: trackId, ...trackData.toObject() }); 
+        });
+
+        res.status(200).json({ likedSongs: songs });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = {loginUser, signupUser, toggleLikeSong, isLikedSong, getLikedSongs}
