@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import { usePlayer } from "../context/PlayerContext";
 
 const playlists = [
 	{
@@ -106,6 +107,8 @@ function LandingPage() {
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const controllerRef = useRef(null); 
+
+	const { playTrack, currentTrack, playing } = usePlayer();
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
@@ -208,6 +211,7 @@ function LandingPage() {
 									results.slice(0, 8).map((track) => (
 										<div
 											key={track.id}
+											onClick={() => playTrack(track)}
 											className="flex items-center gap-3 p-3 hover:bg-white/5 cursor-pointer transition-colors"
 										>
 											<img
