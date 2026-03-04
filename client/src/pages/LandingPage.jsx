@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { usePlayer } from "../context/PlayerContext";
+import { jwtDecode } from "jwt-decode";
 
 const playlists = [
 	{
@@ -107,6 +108,9 @@ function LandingPage() {
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const controllerRef = useRef(null); 
+	const [user, setUser] = useState(null);
+    const [error, setError] = useState(null);
+	const [profileImage, setProfileImage] = useState("");
 
 	const { playTrack, currentTrack, playing } = usePlayer();
 
@@ -121,6 +125,36 @@ function LandingPage() {
 
         return () => clearTimeout(delayDebounceFn);
     }, [query]);
+
+	useEffect(() => {
+        const fetchUserDetails = async () => {
+            const token = localStorage.getItem("token");
+            
+            if (!token) {
+                setError("Not authenticated");
+                return;
+            }
+
+            try {
+                const decodedToken = jwtDecode(token);
+                const extractedId = decodedToken._id;
+				console.log("1. Decoded Token:", decodedToken);
+
+                const response = await axios.get(`/api/user/${extractedId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                setUser(response.data);
+                if (response.data.profileImage) {
+					setProfileImage(`http://localhost:4000${response.data.profileImage}`);
+				}
+            } catch (err) {
+                console.error("Failed to load profile:", err);
+                setError("Could not load profile.");
+            }
+        };
+        fetchUserDetails();
+    }, []);
 
     const searchTracks = async (searchTerm) => {
         // Cancel previous request if still in flight
@@ -239,8 +273,16 @@ function LandingPage() {
 						)}
 					</div>
 					<div className="flex items-center gap-3">
+						{profileImage ? (
+						<img 
+							src={profileImage} 
+							alt="Profile" 
+							className="w-8 h-8 rounded-full object-cover ring-2 ring-violet-500/30" 
+						/>
+						) : (
 						<div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 ring-2 ring-violet-500/30" />
-						<span className="text-sm font-medium text-zinc-300">Alex K.</span>
+						)}
+						<span className="text-sm font-medium text-zinc-300">{user?.username}</span>
 					</div>
 				</div>
 

@@ -4,10 +4,12 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 const mongoose = require('mongoose')
+const path = require('path');
 
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
+app.use('/images', express.static(path.join(__dirname, 'assets', 'img')));
 
 const publicRoutes = require('./routes/public')
 const userRoutes = require('./routes/user')
