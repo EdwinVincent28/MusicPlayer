@@ -1,6 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import "./App.css";
-import Artist from "./pages/Artist";
+import Artist from "./pages/ArtistPage";
 import { LoginForm } from "./pages/LoginForm";
 import { SignupForm } from "./pages/SignupForm";
 import LandingPage from "./pages/LandingPage";
