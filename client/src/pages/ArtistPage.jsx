@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useLocation } from "react-router-dom";
+import axios from "axios";
 import Sidebar from "@/components/Sidebar.jsx";
 import MusicPlayer from "@/components/MusicPlayer.jsx";
 import {
@@ -12,311 +14,81 @@ import {
 	Users,
 	Music2,
 	Disc3,
+	UserPlus,
+	UserCheck,
+	Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { usePlayer } from "@/context/PlayerContext.jsx";
+import { usePlayer } from "../context/PlayerContext.jsx";
 
-const artist = {
-	name: "The Weeknd",
-	verified: true,
-	genre: "R&B / Pop",
-	followers: "85.2M",
-	monthlyListeners: "112.4M",
-	banner: "https://picsum.photos/seed/weeknd-banner/1400/500",
-	avatar: "https://picsum.photos/seed/weeknd-avatar/200/200",
-	bio: "Abel Makkonen Tesfaye, known professionally as The Weeknd, is a Canadian singer, songwriter, and record producer. Known for his sonic versatility and dark, atmospheric soundscapes.",
-};
+const PROXY = "https://corsproxy.io/?";
+const DEEZER = "https://api.deezer.com";
 
-const albums = [
-	{
-		id: 1,
-		title: "After Hours",
-		year: "2020",
-		cover: "https://picsum.photos/seed/afterhours/80/80",
-		tracks: [
-			{
-				id: 1,
-				title: "Alone Again",
-				duration: "4:10",
-				durationSecs: 250,
-				plays: "312M",
-			},
-			{
-				id: 2,
-				title: "Too Late",
-				duration: "3:59",
-				durationSecs: 239,
-				plays: "289M",
-			},
-			{
-				id: 3,
-				title: "Hardest To Love",
-				duration: "3:31",
-				durationSecs: 211,
-				plays: "267M",
-			},
-			{
-				id: 4,
-				title: "Scared To Live",
-				duration: "3:12",
-				durationSecs: 192,
-				plays: "198M",
-			},
-			{
-				id: 5,
-				title: "Snowchild",
-				duration: "4:07",
-				durationSecs: 247,
-				plays: "245M",
-			},
-			{
-				id: 6,
-				title: "Escape From LA",
-				duration: "6:00",
-				durationSecs: 360,
-				plays: "178M",
-			},
-			{
-				id: 7,
-				title: "Heartless",
-				duration: "3:18",
-				durationSecs: 198,
-				plays: "401M",
-			},
-			{
-				id: 8,
-				title: "Faith",
-				duration: "6:37",
-				durationSecs: 397,
-				plays: "231M",
-			},
-			{
-				id: 9,
-				title: "Blinding Lights",
-				duration: "3:20",
-				durationSecs: 200,
-				plays: "3.2B",
-			},
-			{
-				id: 10,
-				title: "In Your Eyes",
-				duration: "3:58",
-				durationSecs: 238,
-				plays: "512M",
-			},
-			{
-				id: 11,
-				title: "Save Your Tears",
-				duration: "3:35",
-				durationSecs: 215,
-				plays: "1.1B",
-			},
-			{
-				id: 12,
-				title: "Repeat After Me",
-				duration: "4:02",
-				durationSecs: 242,
-				plays: "156M",
-			},
-			{
-				id: 13,
-				title: "After Hours",
-				duration: "6:01",
-				durationSecs: 361,
-				plays: "289M",
-			},
-		],
-	},
-	{
-		id: 2,
-		title: "Starboy",
-		year: "2016",
-		cover: "https://picsum.photos/seed/starboy/80/80",
-		tracks: [
-			{
-				id: 1,
-				title: "Starboy",
-				duration: "3:50",
-				durationSecs: 230,
-				plays: "2.1B",
-			},
-			{
-				id: 2,
-				title: "Party Monster",
-				duration: "4:09",
-				durationSecs: 249,
-				plays: "412M",
-			},
-			{
-				id: 3,
-				title: "False Alarm",
-				duration: "3:40",
-				durationSecs: 220,
-				plays: "389M",
-			},
-			{
-				id: 4,
-				title: "Reminder",
-				duration: "3:38",
-				durationSecs: 218,
-				plays: "356M",
-			},
-			{
-				id: 5,
-				title: "Rockin'",
-				duration: "3:52",
-				durationSecs: 232,
-				plays: "278M",
-			},
-			{
-				id: 6,
-				title: "Secrets",
-				duration: "4:25",
-				durationSecs: 265,
-				plays: "312M",
-			},
-			{
-				id: 7,
-				title: "True Colors",
-				duration: "4:10",
-				durationSecs: 250,
-				plays: "267M",
-			},
-			{
-				id: 8,
-				title: "Sidewalks",
-				duration: "3:48",
-				durationSecs: 228,
-				plays: "198M",
-			},
-			{
-				id: 9,
-				title: "A Lonely Night",
-				duration: "3:44",
-				durationSecs: 224,
-				plays: "234M",
-			},
-			{
-				id: 10,
-				title: "Attention",
-				duration: "3:49",
-				durationSecs: 229,
-				plays: "189M",
-			},
-			{
-				id: 11,
-				title: "I Feel It Coming",
-				duration: "4:29",
-				durationSecs: 269,
-				plays: "1.4B",
-			},
-		],
-	},
-	{
-		id: 3,
-		title: "Dawn FM",
-		year: "2022",
-		cover: "https://picsum.photos/seed/dawnfm/80/80",
-		tracks: [
-			{
-				id: 1,
-				title: "Dawn FM",
-				duration: "1:36",
-				durationSecs: 96,
-				plays: "145M",
-			},
-			{
-				id: 2,
-				title: "Gasoline",
-				duration: "3:32",
-				durationSecs: 212,
-				plays: "487M",
-			},
-			{
-				id: 3,
-				title: "How Do I Make You Love Me?",
-				duration: "3:34",
-				durationSecs: 214,
-				plays: "356M",
-			},
-			{
-				id: 4,
-				title: "Take My Breath",
-				duration: "3:39",
-				durationSecs: 219,
-				plays: "612M",
-			},
-			{
-				id: 5,
-				title: "Sacrifice",
-				duration: "3:08",
-				durationSecs: 188,
-				plays: "534M",
-			},
-			{
-				id: 6,
-				title: "A Tale By Quincy",
-				duration: "1:44",
-				durationSecs: 104,
-				plays: "112M",
-			},
-			{
-				id: 7,
-				title: "Out of Time",
-				duration: "3:36",
-				durationSecs: 216,
-				plays: "423M",
-			},
-			{
-				id: 8,
-				title: "Here We Go… Again",
-				duration: "4:04",
-				durationSecs: 244,
-				plays: "289M",
-			},
-			{
-				id: 9,
-				title: "Best Friends",
-				duration: "3:13",
-				durationSecs: 193,
-				plays: "267M",
-			},
-			{
-				id: 10,
-				title: "Is There Someone Else?",
-				duration: "3:13",
-				durationSecs: 193,
-				plays: "398M",
-			},
-		],
-	},
-];
-
-// Helper: build a track object for the player
-function toPlayerTrack(track, album) {
-	return {
-		id: `${album.id}-${track.id}`,
-		title: track.title,
-		artist: artist.name,
-		cover: album.cover,
-		duration: track.durationSecs,
-	};
+function formatFans(n) {
+	if (!n) return "—";
+	if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+	if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+	return n.toString();
 }
 
-function TrackRow({ track, album, index }) {
-	const { currentTrack, playing, playTrack, togglePlay } = usePlayer();
+function formatDuration(secs) {
+	if (!secs) return "--:--";
+	return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
+}
+
+// ─── Skeleton loaders ────────────────────────────────────────────────────────
+function HeroSkeleton() {
+	return (
+		<div className="relative h-80 bg-zinc-900 animate-pulse">
+			<div className="absolute bottom-0 left-0 px-8 pb-6 flex items-end gap-6">
+				<div className="w-24 h-24 rounded-2xl bg-zinc-800" />
+				<div className="space-y-3 pb-1">
+					<div className="h-3 w-24 bg-zinc-800 rounded" />
+					<div className="h-10 w-64 bg-zinc-800 rounded" />
+					<div className="h-3 w-48 bg-zinc-800 rounded" />
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function TrackSkeleton() {
+	return (
+		<div className="grid grid-cols-[40px_1fr_120px_80px_40px] gap-4 px-4 py-3 animate-pulse">
+			<div className="w-5 h-5 bg-zinc-800 rounded self-center" />
+			<div className="flex items-center gap-3">
+				<div className="w-9 h-9 bg-zinc-800 rounded-lg shrink-0" />
+				<div className="h-3 bg-zinc-800 rounded w-2/3" />
+			</div>
+			<div className="h-3 bg-zinc-800 rounded w-12 self-center ml-auto" />
+			<div className="h-3 bg-zinc-800 rounded w-10 self-center ml-auto" />
+			<div />
+		</div>
+	);
+}
+
+// ─── Track row ───────────────────────────────────────────────────────────────
+function TrackRow({ track, albumCover, artistName, index }) {
+	const { currentTrack, playing, playTrack, playQueue, togglePlay } =
+		usePlayer();
 	const [liked, setLiked] = useState(false);
 	const [hovered, setHovered] = useState(false);
-	const trackId = `${album.id}-${track.id}`;
-	const isActive = currentTrack?.id === trackId;
+	const isActive = currentTrack?.id === track.id;
 	const isPlaying = isActive && playing;
 
 	const handleClick = () => {
 		if (isActive) {
 			togglePlay();
 		} else {
-			playTrack(toPlayerTrack(track, album));
+			playTrack({
+				id: track.id,
+				title: track.title,
+				artist: artistName,
+				cover: albumCover || track.album?.cover_medium,
+				duration: track.duration,
+				preview: track.preview,
+			});
 		}
 	};
 
@@ -325,10 +97,9 @@ function TrackRow({ track, album, index }) {
 			onMouseEnter={() => setHovered(true)}
 			onMouseLeave={() => setHovered(false)}
 			onClick={handleClick}
-			className={`grid grid-cols-[40px_1fr_120px_80px_40px] gap-4 px-4 py-2.5 rounded-xl items-center cursor-pointer transition-all duration-150
-        ${isActive ? "bg-violet-600/10 border border-violet-500/20" : "hover:bg-white/5"}`}
+			className={`grid grid-cols-[40px_1fr_120px_80px_40px] gap-4 px-4 py-2.5 rounded-xl items-center cursor-pointer transition-all duration-150 group
+				${isActive ? "bg-violet-600/10 border border-violet-500/20" : "hover:bg-white/5"}`}
 		>
-			{/* Index / Play */}
 			<div className="flex items-center justify-center w-6">
 				{hovered || isActive ? (
 					<span className="text-white">
@@ -347,12 +118,14 @@ function TrackRow({ track, album, index }) {
 				)}
 			</div>
 
-			{/* Title */}
 			<div className="flex items-center gap-3 min-w-0">
 				<img
-					src={album.cover}
+					src={albumCover || track.album?.cover_small}
 					alt=""
 					className="w-9 h-9 rounded-lg object-cover shrink-0 opacity-80"
+					onError={(e) => {
+						e.target.src = `https://picsum.photos/seed/${track.id}/40/40`;
+					}}
 				/>
 				<span
 					className={`text-sm font-medium truncate transition-colors ${isActive ? "text-violet-300" : "text-zinc-200"}`}
@@ -375,8 +148,12 @@ function TrackRow({ track, album, index }) {
 				)}
 			</div>
 
-			<span className="text-zinc-600 text-xs text-right">{track.plays}</span>
-			<span className="text-zinc-500 text-sm text-right">{track.duration}</span>
+			<span className="text-zinc-600 text-xs text-right">
+				{track.rank ? `${Math.round(track.rank / 1_000_000)}M` : "—"}
+			</span>
+			<span className="text-zinc-500 text-sm text-right">
+				{formatDuration(track.duration)}
+			</span>
 
 			<button
 				onClick={(e) => {
@@ -391,9 +168,30 @@ function TrackRow({ track, album, index }) {
 	);
 }
 
-function AlbumSection({ album }) {
-	const { playTrack } = usePlayer();
+// ─── Album section ────────────────────────────────────────────────────────────
+function AlbumSection({ album, artistName }) {
+	const { playTrack, playQueue } = usePlayer();
 	const [expanded, setExpanded] = useState(true);
+	const [tracks, setTracks] = useState([]);
+	const [loading, setLoading] = useState(false);
+
+	useEffect(() => {
+		if (!expanded || tracks.length > 0) return;
+		const fetch = async () => {
+			setLoading(true);
+			try {
+				const res = await axios.get(
+					`${PROXY}${DEEZER}/album/${album.id}/tracks`,
+				);
+				setTracks(res.data?.data || []);
+			} catch (e) {
+				console.error(e);
+			} finally {
+				setLoading(false);
+			}
+		};
+		fetch();
+	}, [expanded, album.id]);
 
 	return (
 		<div className="mb-10">
@@ -402,31 +200,45 @@ function AlbumSection({ album }) {
 				onClick={() => setExpanded(!expanded)}
 			>
 				<img
-					src={album.cover}
+					src={album.cover_medium || album.cover_small}
 					alt={album.title}
 					className="w-14 h-14 rounded-xl object-cover shadow-lg shadow-black/40 group-hover:scale-105 transition-transform duration-200"
 				/>
 				<div className="flex-1 min-w-0">
 					<div className="flex items-center gap-2">
-						<h3 className="text-white font-bold text-lg">{album.title}</h3>
+						<h3 className="text-white font-bold text-lg truncate">
+							{album.title}
+						</h3>
 						<Badge
 							variant="outline"
-							className="text-zinc-500 border-zinc-700 text-xs"
+							className="text-zinc-500 border-zinc-700 text-xs shrink-0"
 						>
-							{album.year}
+							{album.release_date?.slice(0, 4)}
 						</Badge>
 					</div>
-					<p className="text-zinc-500 text-sm">{album.tracks.length} tracks</p>
+					<p className="text-zinc-500 text-sm capitalize">
+						{album.record_type || "album"}
+					</p>
 				</div>
-				<button
-					onClick={(e) => {
-						e.stopPropagation();
-						playTrack(toPlayerTrack(album.tracks[0], album));
-					}}
-					className="w-10 h-10 rounded-full bg-violet-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-violet-500 hover:scale-110 shadow-lg shadow-violet-900/50"
-				>
-					<Play size={14} fill="white" className="text-white ml-0.5" />
-				</button>
+				{tracks[0] && (
+					<button
+						onClick={(e) => {
+							e.stopPropagation();
+							const queueTracks = tracks.map((t) => ({
+								id: t.id,
+								title: t.title,
+								artist: artistName,
+								cover: album.cover_medium,
+								duration: t.duration,
+								preview: t.preview,
+							}));
+							playQueue(queueTracks, 0);
+						}}
+						className="w-10 h-10 rounded-full bg-violet-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-violet-500 hover:scale-110 shadow-lg shadow-violet-900/50"
+					>
+						<Play size={14} fill="white" className="text-white ml-0.5" />
+					</button>
+				)}
 				<span className="text-zinc-700 text-xs ml-2">
 					{expanded ? "▲" : "▼"}
 				</span>
@@ -437,33 +249,167 @@ function AlbumSection({ album }) {
 					<div className="grid grid-cols-[40px_1fr_120px_80px_40px] gap-4 px-4 py-2 mb-1 text-xs font-semibold text-zinc-700 uppercase tracking-wider border-b border-white/5">
 						<span>#</span>
 						<span>Title</span>
-						<span className="text-right">Plays</span>
+						<span className="text-right">Rank</span>
 						<span className="flex items-center gap-1 justify-end">
 							<Clock size={11} /> Time
 						</span>
 						<span />
 					</div>
-					{album.tracks.map((track, i) => (
-						<TrackRow key={track.id} track={track} album={album} index={i} />
-					))}
+					{loading
+						? Array.from({ length: 4 }).map((_, i) => <TrackSkeleton key={i} />)
+						: tracks.map((track, i) => (
+								<TrackRow
+									key={track.id}
+									track={track}
+									albumCover={album.cover_medium}
+									artistName={artistName}
+									index={i}
+								/>
+							))}
 				</>
 			)}
 		</div>
 	);
 }
 
+// ─── Main page ────────────────────────────────────────────────────────────────
 export default function ArtistPage() {
-	const { currentTrack, playing, playTrack, togglePlay } = usePlayer();
+	const { id } = useParams();
+	const { state } = useLocation();
+	const { currentTrack, playing, playTrack, playQueue, togglePlay } =
+		usePlayer();
+
+	const [artist, setArtist] = useState(state?.artist || null);
+	const [topTracks, setTopTracks] = useState([]);
+	const [albums, setAlbums] = useState([]);
+	const [loading, setLoading] = useState(!state?.artist);
+	const [tracksLoading, setTracksLoading] = useState(true);
+	const [albumsLoading, setAlbumsLoading] = useState(true);
+	const [followed, setFollowed] = useState(false);
+	const [followLoading, setFollowLoading] = useState(false);
+	const [followHovered, setFollowHovered] = useState(false);
 	const [activeTab, setActiveTab] = useState("discography");
-	const totalTracks = albums.reduce((acc, a) => acc + a.tracks.length, 0);
+
+	// Fetch artist info if not passed via router state
+	useEffect(() => {
+		if (artist) return;
+		const fetch = async () => {
+			setLoading(true);
+			try {
+				const res = await axios.get(`${PROXY}${DEEZER}/artist/${id}`);
+				setArtist(res.data);
+			} catch (e) {
+				console.error("Failed to fetch artist", e);
+			} finally {
+				setLoading(false);
+			}
+		};
+		fetch();
+	}, [id]);
+
+	// Fetch top tracks
+	useEffect(() => {
+		if (!id) return;
+		const fetch = async () => {
+			setTracksLoading(true);
+			try {
+				const res = await axios.get(
+					`${PROXY}${DEEZER}/artist/${id}/top?limit=10`,
+				);
+				setTopTracks(res.data?.data || []);
+			} catch (e) {
+				console.error("Failed to fetch top tracks", e);
+			} finally {
+				setTracksLoading(false);
+			}
+		};
+		fetch();
+	}, [id]);
+
+	// Fetch albums
+	useEffect(() => {
+		if (!id) return;
+		const fetch = async () => {
+			setAlbumsLoading(true);
+			try {
+				const res = await axios.get(
+					`${PROXY}${DEEZER}/artist/${id}/albums?limit=20`,
+				);
+				setAlbums(res.data?.data || []);
+			} catch (e) {
+				console.error("Failed to fetch albums", e);
+			} finally {
+				setAlbumsLoading(false);
+			}
+		};
+		fetch();
+	}, [id]);
+
+	// Check follow state from backend
+	useEffect(() => {
+		const checkFollow = async () => {
+			try {
+				const token = localStorage.getItem("token");
+				if (!token || !id) return;
+				const { data } = await axios.get(`/api/user/following/${id}`, {
+					headers: { Authorization: `Bearer ${token}` },
+				});
+				setFollowed(data.following);
+			} catch (e) {
+				// silently fail — follow state just defaults to false
+			}
+		};
+		checkFollow();
+	}, [id]);
+
+	const handleFollow = async () => {
+		// Optimistic update — flip immediately so button feels instant
+		const wasFollowed = followed;
+		setFollowed(!wasFollowed);
+		setFollowLoading(true);
+
+		try {
+			const token = localStorage.getItem("token");
+			await axios.put(
+				"/api/user/follow",
+				{
+					artistId: Number(id),
+					artistName: artist?.name,
+					artistPicture: artist?.picture_medium,
+					action: wasFollowed ? "unfollow" : "follow",
+				},
+				{ headers: { Authorization: `Bearer ${token}` } },
+			);
+		} catch (e) {
+			// Revert on failure
+			console.error("Follow failed", e);
+			setFollowed(wasFollowed);
+		} finally {
+			setFollowLoading(false);
+		}
+	};
 
 	const handlePlayAll = () => {
-		const firstTrack = toPlayerTrack(albums[0].tracks[0], albums[0]);
-		if (currentTrack?.id === firstTrack.id) {
+		if (!topTracks.length) return;
+
+		// If already playing this artist's queue, just toggle pause/play
+		if (currentTrack?.artistId === Number(id) && playing) {
 			togglePlay();
-		} else {
-			playTrack(firstTrack);
+			return;
 		}
+
+		// Build queue from all top tracks and start from the first
+		const queueTracks = topTracks.map((t) => ({
+			id: t.id,
+			title: t.title,
+			artist: artist?.name,
+			artistId: Number(id),
+			cover: t.album?.cover_medium,
+			duration: t.duration,
+			preview: t.preview,
+		}));
+
+		playQueue(queueTracks, 0);
 	};
 
 	return (
@@ -471,70 +417,116 @@ export default function ArtistPage() {
 			<Sidebar />
 
 			<div className="flex-1 overflow-y-auto pb-28">
-				{/* Hero Banner */}
-				<div className="relative h-80 overflow-hidden">
-					<img
-						src={artist.banner}
-						alt={artist.name}
-						className="w-full h-full object-cover"
-					/>
-					<div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent" />
-					<div className="absolute inset-0 bg-gradient-to-r from-zinc-950/60 to-transparent" />
-					<div className="absolute bottom-0 left-0 px-8 pb-6 flex items-end gap-6">
+				{/* Hero */}
+				{loading ? (
+					<HeroSkeleton />
+				) : (
+					<div className="relative h-80 overflow-hidden">
 						<img
-							src={artist.avatar}
-							alt={artist.name}
-							className="w-24 h-24 rounded-2xl object-cover ring-4 ring-zinc-950 shadow-2xl"
+							src={artist?.picture_xl || artist?.picture_big}
+							alt={artist?.name}
+							className="w-full h-full object-cover object-top"
+							onError={(e) => {
+								e.target.src = `https://picsum.photos/seed/${id}/1400/500`;
+							}}
 						/>
-						<div className="flex flex-col gap-1 pb-1">
-							<div className="flex items-center gap-2">
-								<CheckCircle2
-									size={16}
-									className="text-violet-400"
-									fill="currentColor"
-								/>
-								<span className="text-zinc-400 text-xs font-medium uppercase tracking-wider">
-									Verified Artist
-								</span>
-							</div>
-							<h1 className="text-5xl font-black tracking-tight text-white drop-shadow-2xl">
-								{artist.name}
-							</h1>
-							<div className="flex items-center gap-4 mt-1">
-								<span className="text-zinc-400 text-sm flex items-center gap-1.5">
-									<Users size={13} /> {artist.followers} followers
-								</span>
-								<span className="text-zinc-600">•</span>
-								<span className="text-zinc-400 text-sm">
-									{artist.monthlyListeners} monthly listeners
-								</span>
-								<span className="text-zinc-600">•</span>
-								<span className="text-zinc-500 text-sm">{artist.genre}</span>
+						<div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/50 to-transparent" />
+						<div className="absolute inset-0 bg-gradient-to-r from-zinc-950/70 to-transparent" />
+
+						<div className="absolute bottom-0 left-0 px-8 pb-6 flex items-end gap-6">
+							<img
+								src={artist?.picture_big || artist?.picture_medium}
+								alt={artist?.name}
+								className="w-24 h-24 rounded-2xl object-cover ring-4 ring-zinc-950 shadow-2xl"
+								onError={(e) => {
+									e.target.src = `https://picsum.photos/seed/${id}/200/200`;
+								}}
+							/>
+							<div className="flex flex-col gap-1 pb-1">
+								<div className="flex items-center gap-2">
+									<CheckCircle2
+										size={16}
+										className="text-violet-400"
+										fill="currentColor"
+									/>
+									<span className="text-zinc-400 text-xs font-medium uppercase tracking-wider">
+										Verified Artist
+									</span>
+								</div>
+								<h1 className="text-5xl font-black tracking-tight text-white drop-shadow-2xl">
+									{artist?.name}
+								</h1>
+								<div className="flex items-center gap-4 mt-1">
+									<span className="text-zinc-400 text-sm flex items-center gap-1.5">
+										<Users size={13} /> {formatFans(artist?.nb_fan)} fans
+									</span>
+									{artist?.nb_album && (
+										<>
+											<span className="text-zinc-600">•</span>
+											<span className="text-zinc-400 text-sm">
+												{artist.nb_album} albums
+											</span>
+										</>
+									)}
+								</div>
 							</div>
 						</div>
 					</div>
-				</div>
+				)}
 
 				{/* Action bar */}
 				<div className="px-8 py-5 flex items-center gap-4 border-b border-white/5">
 					<Button
 						onClick={handlePlayAll}
-						className="bg-violet-600 hover:bg-violet-500 text-white rounded-full px-7 gap-2 shadow-lg shadow-violet-900/40 hover:scale-105 active:scale-95 transition-all duration-150"
+						disabled={topTracks.length === 0}
+						className="bg-violet-600 hover:bg-violet-500 text-white rounded-full px-7 gap-2 shadow-lg shadow-violet-900/40 hover:scale-105 active:scale-95 transition-all duration-150 disabled:opacity-40"
 					>
-						{playing ? (
-							<Pause size={15} fill="white" />
+						{playing && currentTrack?.artist === artist?.name ? (
+							<>
+								<Pause size={15} fill="white" /> Pause
+							</>
 						) : (
-							<Play size={15} fill="white" className="ml-0.5" />
+							<>
+								<Play size={15} fill="white" className="ml-0.5" /> Play All
+							</>
 						)}
-						{playing ? "Pause" : "Play All"}
 					</Button>
+
+					{/* Follow button */}
 					<Button
+						onClick={handleFollow}
+						disabled={followLoading}
 						variant="outline"
-						className="rounded-full border-white/20 text-white bg-transparent hover:bg-white/10 gap-2"
+						onMouseEnter={() => setFollowHovered(true)}
+						onMouseLeave={() => setFollowHovered(false)}
+						className={`rounded-full px-6 gap-2 transition-all duration-200 border min-w-[120px] justify-center
+							${
+								followed
+									? followHovered
+										? "border-red-500/50 text-red-400 bg-red-600/10"
+										: "border-violet-500/50 text-violet-300 bg-violet-600/10"
+									: "border-white/20 text-white bg-transparent hover:bg-white/10"
+							}`}
 					>
-						<Shuffle size={15} />
-						Shuffle
+						{followLoading ? (
+							<Loader2 size={15} className="animate-spin" />
+						) : followed ? (
+							followHovered ? (
+								<>
+									<UserPlus size={15} /> Unfollow
+								</>
+							) : (
+								<>
+									<UserCheck size={15} /> Following
+								</>
+							)
+						) : (
+							<>
+								<UserPlus size={15} /> Follow
+							</>
+						)}
 					</Button>
+
 					<Button
 						variant="ghost"
 						className="rounded-full text-zinc-400 hover:text-white gap-2 ml-auto"
@@ -555,7 +547,7 @@ export default function ArtistPage() {
 								key={key}
 								onClick={() => setActiveTab(key)}
 								className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all duration-200 border-b-2 -mb-px
-                  ${activeTab === key ? "border-violet-500 text-violet-300" : "border-transparent text-zinc-500 hover:text-zinc-300"}`}
+									${activeTab === key ? "border-violet-500 text-violet-300" : "border-transparent text-zinc-500 hover:text-zinc-300"}`}
 							>
 								<Icon size={15} />
 								{label}
@@ -563,124 +555,92 @@ export default function ArtistPage() {
 						))}
 					</div>
 
+					{/* Discography */}
 					{activeTab === "discography" && (
 						<div>
 							<p className="text-zinc-600 text-sm mb-6">
-								{albums.length} albums · {totalTracks} songs
+								{albums.length} releases
 							</p>
-							{albums.map((album) => (
-								<AlbumSection key={album.id} album={album} />
-							))}
+							{albumsLoading
+								? Array.from({ length: 3 }).map((_, i) => (
+										<div key={i} className="mb-10 animate-pulse">
+											<div className="flex items-center gap-4 mb-4">
+												<div className="w-14 h-14 bg-zinc-800 rounded-xl" />
+												<div className="space-y-2">
+													<div className="h-4 w-40 bg-zinc-800 rounded" />
+													<div className="h-3 w-20 bg-zinc-800 rounded" />
+												</div>
+											</div>
+										</div>
+									))
+								: albums.map((album) => (
+										<AlbumSection
+											key={album.id}
+											album={album}
+											artistName={artist?.name}
+										/>
+									))}
 						</div>
 					)}
 
+					{/* Popular Tracks */}
 					{activeTab === "popular" && (
 						<div>
-							<p className="text-zinc-600 text-sm mb-6">
-								Most played tracks across all albums
-							</p>
-							<div className="grid grid-cols-[40px_1fr_120px_80px_80px_40px] gap-4 px-4 py-2 mb-1 text-xs font-semibold text-zinc-700 uppercase tracking-wider border-b border-white/5">
+							<p className="text-zinc-600 text-sm mb-6">Top tracks by plays</p>
+							<div className="grid grid-cols-[40px_1fr_120px_80px_40px] gap-4 px-4 py-2 mb-1 text-xs font-semibold text-zinc-700 uppercase tracking-wider border-b border-white/5">
 								<span>#</span>
 								<span>Title</span>
-								<span>Album</span>
-								<span className="text-right">Plays</span>
+								<span className="text-right">Rank</span>
 								<span className="flex items-center gap-1 justify-end">
 									<Clock size={11} /> Time
 								</span>
 								<span />
 							</div>
-							{albums
-								.flatMap((album) =>
-									album.tracks.map((t) => ({
-										...t,
-										albumTitle: album.title,
-										albumCover: album.cover,
-										albumObj: album,
-									})),
-								)
-								.sort((a, b) => parseFloat(b.plays) - parseFloat(a.plays))
-								.slice(0, 10)
-								.map((track, i) => {
-									const trackId = `${track.albumObj.id}-${track.id}`;
-									const isActive = currentTrack?.id === trackId;
-									const isPlaying = isActive && playing;
-									return (
-										<div
-											key={trackId}
-											onClick={() =>
-												isActive
-													? togglePlay()
-													: playTrack(toPlayerTrack(track, track.albumObj))
-											}
-											className={`grid grid-cols-[40px_1fr_120px_80px_80px_40px] gap-4 px-4 py-2.5 rounded-xl items-center cursor-pointer transition-all duration-150
-                        ${isActive ? "bg-violet-600/10 border border-violet-500/20" : "hover:bg-white/5"}`}
-										>
-											<span
-												className={`text-sm font-medium ${isActive ? "text-violet-400" : "text-zinc-600"}`}
-											>
-												{i + 1}
-											</span>
-											<div className="flex items-center gap-3 min-w-0">
-												<img
-													src={track.albumCover}
-													alt=""
-													className="w-9 h-9 rounded-lg object-cover shrink-0"
-												/>
-												<span
-													className={`text-sm font-medium truncate ${isActive ? "text-violet-300" : "text-zinc-200"}`}
-												>
-													{track.title}
-												</span>
-												{isPlaying && (
-													<span className="shrink-0 flex gap-0.5 items-end h-3">
-														{[1, 2, 3].map((b) => (
-															<span
-																key={b}
-																className="w-0.5 bg-violet-400 rounded-full animate-pulse"
-																style={{
-																	height: `${8 + b * 3}px`,
-																	animationDelay: `${b * 0.15}s`,
-																}}
-															/>
-														))}
-													</span>
-												)}
-											</div>
-											<span className="text-zinc-500 text-xs truncate">
-												{track.albumTitle}
-											</span>
-											<span className="text-zinc-600 text-xs text-right">
-												{track.plays}
-											</span>
-											<span className="text-zinc-500 text-sm text-right">
-												{track.duration}
-											</span>
-											<button className="text-zinc-700 hover:text-zinc-400 opacity-0 group-hover:opacity-100">
-												<Heart size={15} />
-											</button>
-										</div>
-									);
-								})}
+							{tracksLoading
+								? Array.from({ length: 5 }).map((_, i) => (
+										<TrackSkeleton key={i} />
+									))
+								: topTracks.map((track, i) => (
+										<TrackRow
+											key={track.id}
+											track={track}
+											albumCover={track.album?.cover_medium}
+											artistName={artist?.name}
+											index={i}
+										/>
+									))}
 						</div>
 					)}
 
+					{/* About */}
 					{activeTab === "about" && (
 						<div className="max-w-2xl space-y-6">
-							<div className="bg-zinc-900/60 rounded-2xl border border-white/5 p-6">
-								<h3 className="text-white font-semibold mb-3">Biography</h3>
-								<p className="text-zinc-400 text-sm leading-relaxed">
-									{artist.bio}
-								</p>
-							</div>
+							{artist?.picture_xl && (
+								<div className="rounded-2xl overflow-hidden h-64">
+									<img
+										src={artist.picture_xl}
+										alt={artist.name}
+										className="w-full h-full object-cover object-top"
+									/>
+								</div>
+							)}
 							<div className="grid grid-cols-3 gap-4">
 								{[
-									{ label: "Followers", value: artist.followers, icon: Users },
 									{
-										label: "Monthly Listeners",
-										value: artist.monthlyListeners,
+										label: "Fans",
+										value: formatFans(artist?.nb_fan),
+										icon: Users,
+									},
+									{
+										label: "Albums",
+										value: artist?.nb_album ?? albums.length,
+										icon: Disc3,
+									},
+									{
+										label: "Top Tracks",
+										value: topTracks.length,
 										icon: Music2,
 									},
-									{ label: "Albums", value: albums.length, icon: Disc3 },
 								].map(({ label, value, icon: Icon }) => (
 									<div
 										key={label}
@@ -691,6 +651,19 @@ export default function ArtistPage() {
 										<p className="text-zinc-500 text-xs">{label}</p>
 									</div>
 								))}
+							</div>
+							<div className="bg-zinc-900/60 rounded-2xl border border-white/5 p-6">
+								<h3 className="text-white font-semibold mb-2">
+									Artist on Deezer
+								</h3>
+								<a
+									href={artist?.link}
+									target="_blank"
+									rel="noreferrer"
+									className="text-violet-400 hover:text-violet-300 text-sm underline underline-offset-2 transition-colors"
+								>
+									View on Deezer →
+								</a>
 							</div>
 						</div>
 					)}

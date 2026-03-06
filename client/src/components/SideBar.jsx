@@ -16,7 +16,7 @@ const navItems = [
 	{ icon: Heart, label: "Liked Songs", path: "/like" },
 	{ icon: Library, label: "Playlists", path: "/playlist" },
 	// { icon: PlusSquare, label: "Create Playlist" },
-	{ icon: Mic2, label: "Artists", path: "/artist" },
+	{ icon: Mic2, label: "Artists", path: "/artists" },
 	{ icon: LogOut, label: "Logout", path: "/" },
 ];
 
