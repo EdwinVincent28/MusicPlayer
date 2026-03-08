@@ -8,6 +8,7 @@ import LandingPage from "./pages/LandingPage";
 import Like from "./pages/LikedSongs.jsx";
 import { PlayerProvider } from "./context/PlayerContext.jsx";
 import Playlists from "./pages/PlaylistPage";
+import PlaylistSongsPage from "./pages/PlaylistSongsPage";
 
 function App() {
 	return (
@@ -17,6 +18,7 @@ function App() {
 				<Route path="/signup" element={<SignupForm />} />
 				<Route path="/like" element={<Like />} />
 				<Route path="/playlist" element={<Playlists />} />
+				<Route path="/playlist/:id" element={<PlaylistSongsPage />} />
 				<Route path="/artist/:id" element={<ArtistPage />} />
 				<Route path="/artists" element={<ArtistsPage />} />
 				<Route path="/home" element={<LandingPage />} />

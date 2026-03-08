@@ -1,9 +1,10 @@
 import Sidebar from "@/components/Sidebar.jsx";
 import MusicPlayer from "@/components/MusicPlayer.jsx";
-import { Play, Shuffle, Clock, Heart, MoreHorizontal, Pause } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Play, Shuffle, Clock, Heart, MoreHorizontal, Pause, Plus, ListMusic, X, Upload } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { usePlayer } from "../context/PlayerContext";
+import { createPortal } from "react-dom";
 
 function formatDuration(seconds) {
     if (!seconds) return "--:--";
@@ -12,10 +13,193 @@ function formatDuration(seconds) {
     return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+const TrackMenu = ({ track, onClose }) => {
+    const [userPlaylists, setUserPlaylists] = useState([]);
+    const [loadingPlaylists, setLoadingPlaylists] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [newName, setNewName] = useState("");
+    const [newDesc, setNewDesc] = useState("");
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [creating, setCreating] = useState(false);
+    const fileInputRef = useRef(null);
+    const menuRef = useRef(null);
+
+    useEffect(() => {
+        const fetchPlaylists = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                const { data } = await axios.get("/api/playlist", {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                setUserPlaylists(data);
+            } catch (err) {
+                console.error("Failed to fetch playlists", err);
+            } finally {
+                setLoadingPlaylists(false);
+            }
+        };
+        fetchPlaylists();
+    }, []);
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (!showModal && menuRef.current && !menuRef.current.contains(e.target)) onClose();
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, [onClose, showModal]);
+
+    const addToPlaylist = async (playlistId) => {
+        try {
+            const token = localStorage.getItem("token");
+            await axios.post(
+                `/api/playlist/${playlistId}/tracks`,
+                {
+                    trackId: track.id,
+                    title: track.title,
+                    artist: track.artist,
+                    cover: track.cover,
+                    preview: track.preview,
+                    duration: track.duration,
+                },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            onClose();
+        } catch (err) {
+            console.error("Failed to add to playlist", err);
+        }
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setImageFile(file);
+        setImagePreview(URL.createObjectURL(file));
+    };
+
+    const handleModalClose = () => {
+        setShowModal(false);
+        setNewName("");
+        setNewDesc("");
+        setImageFile(null);
+        setImagePreview(null);
+    };
+
+    const createAndAdd = async () => {
+        if (!newName.trim()) return;
+        setCreating(true);
+        try {
+            const token = localStorage.getItem("token");
+            const formData = new FormData();
+            formData.append("name", newName.trim());
+            formData.append("description", newDesc.trim());
+            if (imageFile) formData.append("playlistImage", imageFile);
+            const { data: newPlaylist } = await axios.post("/api/playlist", formData, {
+                headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+            });
+            await addToPlaylist(newPlaylist._id);
+        } catch (err) {
+            console.error("Failed to create playlist", err);
+        } finally {
+            setCreating(false);
+        }
+    };
+
+    return (
+        <>
+            <div ref={menuRef} className="absolute right-0 top-8 z-50 w-56 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+                <div className="px-3 py-2 border-b border-white/5">
+                    <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Add to Playlist</p>
+                </div>
+                <div className="max-h-48 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+                    {loadingPlaylists && <p className="text-zinc-500 text-xs px-3 py-3">Loading playlists...</p>}
+                    {!loadingPlaylists && userPlaylists.length === 0 && (
+                        <p className="text-zinc-500 text-xs px-3 py-3">No playlists yet</p>
+                    )}
+                    {!loadingPlaylists && userPlaylists.map((pl) => (
+                        <button
+                            key={pl._id}
+                            onClick={() => addToPlaylist(pl._id)}
+                            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition-colors text-left"
+                        >
+                            <div className="w-7 h-7 rounded-md bg-zinc-800 flex items-center justify-center shrink-0 overflow-hidden">
+                                {pl.playlistImage
+                                    ? <img src={`http://localhost:4000${pl.playlistImage}`} alt="" className="w-full h-full object-cover" />
+                                    : <ListMusic size={12} className="text-zinc-500" />
+                                }
+                            </div>
+                            <span className="truncate flex-1">{pl.name}</span>
+                        </button>
+                    ))}
+                </div>
+                <div className="border-t border-white/5">
+                    <button
+                        onClick={() => setShowModal(true)}
+                        className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-violet-400 hover:bg-white/5 transition-colors"
+                    >
+                        <Plus size={14} />
+                        New Playlist
+                    </button>
+                </div>
+            </div>
+
+            {showModal && createPortal(
+                <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center" onClick={handleModalClose}>
+                    <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-5">
+                            <h2 className="text-white text-xl font-bold">Create Playlist</h2>
+                            <button onClick={handleModalClose} className="text-zinc-500 hover:text-white transition-colors"><X size={18} /></button>
+                        </div>
+                        <div className="flex flex-col gap-4">
+                            <div>
+                                <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1.5 block">Cover Image</label>
+                                <div onClick={() => fileInputRef.current?.click()} className="relative w-full h-36 rounded-xl border-2 border-dashed border-white/10 hover:border-violet-500/50 transition-colors cursor-pointer overflow-hidden flex items-center justify-center bg-zinc-800">
+                                    {imagePreview ? (
+                                        <>
+                                            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                                                <p className="text-white text-xs font-semibold">Change Image</p>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-2 text-zinc-600">
+                                            <Upload size={24} />
+                                            <p className="text-xs">Click to upload image</p>
+                                        </div>
+                                    )}
+                                </div>
+                                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                            </div>
+                            <div>
+                                <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1.5 block">Name <span className="text-violet-400">*</span></label>
+                                <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && createAndAdd()} placeholder="My Playlist" className="w-full bg-zinc-800 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors" />
+                            </div>
+                            <div>
+                                <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1.5 block">Description</label>
+                                <input type="text" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="Optional description" className="w-full bg-zinc-800 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors" />
+                            </div>
+                        </div>
+                        <div className="flex gap-3 mt-6">
+                            <button onClick={handleModalClose} className="flex-1 py-3 rounded-xl border border-white/10 text-zinc-400 text-sm font-semibold hover:bg-white/5 transition-colors">Cancel</button>
+                            <button onClick={createAndAdd} disabled={!newName.trim() || creating} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-600 text-white text-sm font-semibold shadow-lg shadow-violet-900/40 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity">
+                                {creating ? "Creating..." : "Create & Add"}
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+        </>
+    );
+};
+
+
 export default function LikedSongs() {
     const [likedSongs, setLikedSongs] = useState([]);
     const [loading, setLoading] = useState(true);
     const { playTrack, currentTrack, playing, playQueue } = usePlayer();
+    const [openMenuTrackId, setOpenMenuTrackId] = useState(null);
 
     useEffect(() => {
         const fetchLikedSongs = async () => {
@@ -239,17 +423,37 @@ export default function LikedSongs() {
                                         {formatDuration(song.duration)}
                                     </span>
 
-                                    {/* Unlike button */}
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleUnlike(song.id);
-                                        }}
-                                        className="text-violet-400 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                                        title="Remove from liked songs"
-                                    >
-                                        <Heart size={16} fill="currentColor" />
-                                    </button>
+                                    <div className="relative flex items-center gap-2">
+                                        {/* Heart — unlike */}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleUnlike(song.id);
+                                            }}
+                                            className="text-violet-400 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                                            title="Remove from liked songs"
+                                        >
+                                            <Heart size={16} fill="currentColor" />
+                                        </button>
+
+                                        {/* 3 dots — add to playlist */}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setOpenMenuTrackId(openMenuTrackId === song.id ? null : song.id);
+                                            }}
+                                            className="text-zinc-600 hover:text-zinc-300 transition-colors opacity-0 group-hover:opacity-100"
+                                        >
+                                            <MoreHorizontal size={16} />
+                                        </button>
+
+                                        {openMenuTrackId === song.id && (
+                                            <TrackMenu
+                                                track={song}
+                                                onClose={() => setOpenMenuTrackId(null)}
+                                            />
+                                        )}
+                                    </div>
                                 </div>
                             );
                         })}

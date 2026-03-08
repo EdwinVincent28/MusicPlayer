@@ -40,7 +40,7 @@ export default function MusicPlayer() {
 					`/api/user/like/${currentTrack.id}`,
 					{ headers: { Authorization: `Bearer ${token}` } }
 				);
-				setLiked(data.liked);
+				setLiked(data.isLiked);
 			} catch (err) {
 				console.error("Failed to fetch liked status:", err);
 				setLiked(false);

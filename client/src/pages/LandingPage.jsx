@@ -1,13 +1,14 @@
 import Sidebar from "@/components/Sidebar.jsx";
 import PlaylistCard from "@/components/PlaylistCard.jsx";
 import MusicPlayer from "@/components/MusicPlayer.jsx";
-import { Play, TrendingUp, Clock, MoreHorizontal, Search } from "lucide-react";
+import { Play, TrendingUp, Clock, MoreHorizontal, Search, Plus, ListMusic, X, Check, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { usePlayer } from "../context/PlayerContext";
 import { jwtDecode } from "jwt-decode";
+import { createPortal } from "react-dom";
 
 const playlists = [
 	{
@@ -61,226 +62,396 @@ const playlists = [
 ];
 
 const trendingTracks = [
-	{
-		rank: 1,
-		title: "Blinding Lights",
-		artist: "The Weeknd",
-		album: "After Hours",
-		duration: "3:20",
-		img: "https://picsum.photos/seed/t1/40/40",
-	},
-	{
-		rank: 2,
-		title: "As It Was",
-		artist: "Harry Styles",
-		album: "Harry's House",
-		duration: "2:47",
-		img: "https://picsum.photos/seed/t2/40/40",
-	},
-	{
-		rank: 3,
-		title: "Levitating",
-		artist: "Dua Lipa",
-		album: "Future Nostalgia",
-		duration: "3:24",
-		img: "https://picsum.photos/seed/t3/40/40",
-	},
-	{
-		rank: 4,
-		title: "Stay",
-		artist: "The Kid LAROI",
-		album: "F*ck Love",
-		duration: "2:21",
-		img: "https://picsum.photos/seed/t4/40/40",
-	},
-	{
-		rank: 5,
-		title: "Ghost",
-		artist: "Justin Bieber",
-		album: "Justice",
-		duration: "2:33",
-		img: "https://picsum.photos/seed/t5/40/40",
-	},
+	{ rank: 1, title: "Blinding Lights", artist: "The Weeknd", album: "After Hours", duration: "3:20", img: "https://picsum.photos/seed/t1/40/40" },
+	{ rank: 2, title: "As It Was", artist: "Harry Styles", album: "Harry's House", duration: "2:47", img: "https://picsum.photos/seed/t2/40/40" },
+	{ rank: 3, title: "Levitating", artist: "Dua Lipa", album: "Future Nostalgia", duration: "3:24", img: "https://picsum.photos/seed/t3/40/40" },
+	{ rank: 4, title: "Stay", artist: "The Kid LAROI", album: "F*ck Love", duration: "2:21", img: "https://picsum.photos/seed/t4/40/40" },
+	{ rank: 5, title: "Ghost", artist: "Justin Bieber", album: "Justice", duration: "2:33", img: "https://picsum.photos/seed/t5/40/40" },
 ];
 
+// ── Track Context Menu ─────────────────────────────────────────────────────────
+function TrackMenu({ track, onClose }) {
+	const [userPlaylists, setUserPlaylists] = useState([]);
+	const [loading, setLoading] = useState(true);
+	const [showModal, setShowModal] = useState(false);
+	const [newName, setNewName] = useState("");
+	const [newDesc, setNewDesc] = useState("");
+	const [imageFile, setImageFile] = useState(null);
+	const [imagePreview, setImagePreview] = useState(null);
+	const [creating, setCreating] = useState(false);
+	const fileInputRef = useRef(null);
+	const menuRef = useRef(null);
+
+	useEffect(() => {
+		const fetchPlaylists = async () => {
+			try {
+				const token = localStorage.getItem("token");
+				const { data } = await axios.get("/api/playlist", {
+					headers: { Authorization: `Bearer ${token}` },
+				});
+				setUserPlaylists(data);
+			} catch (err) {
+				console.error("Failed to fetch playlists", err);
+			} finally {
+				setLoading(false);
+			}
+		};
+		fetchPlaylists();
+	}, []);
+
+	// Close dropdown on outside click (but not when modal is open)
+	useEffect(() => {
+		const handler = (e) => {
+			if (!showModal && menuRef.current && !menuRef.current.contains(e.target)) onClose();
+		};
+		document.addEventListener("mousedown", handler);
+		return () => document.removeEventListener("mousedown", handler);
+	}, [onClose, showModal]);
+
+	const addToPlaylist = async (playlistId) => {
+		try {
+			const token = localStorage.getItem("token");
+			await axios.post(
+				`/api/playlist/${playlistId}/tracks`,
+				{
+					trackId: track.id,
+					title: track.title,
+					artist: track.artist.name,
+					cover: track.album.cover,
+					preview: track.preview,
+					duration: track.duration,
+				},
+				{ headers: { Authorization: `Bearer ${token}` } }
+			);
+			onClose(); // close dropdown after adding
+		} catch (err) {
+			console.error("Failed to add to playlist", err);
+		}
+	};
+
+	const handleImageChange = (e) => {
+		const file = e.target.files[0];
+		if (!file) return;
+		setImageFile(file);
+		setImagePreview(URL.createObjectURL(file));
+	};
+
+	const handleModalClose = () => {
+		setShowModal(false);
+		setNewName("");
+		setNewDesc("");
+		setImageFile(null);
+		setImagePreview(null);
+	};
+
+	const createAndAdd = async () => {
+		if (!newName.trim()) return;
+		setCreating(true);
+		try {
+			const token = localStorage.getItem("token");
+			const formData = new FormData();
+			formData.append("name", newName.trim());
+			formData.append("description", newDesc.trim());
+			if (imageFile) formData.append("playlistImage", imageFile);
+
+			const { data: newPlaylist } = await axios.post("/api/playlist", formData, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+					"Content-Type": "multipart/form-data",
+				},
+			});
+			await addToPlaylist(newPlaylist._id); // this also calls onClose
+		} catch (err) {
+			console.error("Failed to create playlist", err);
+		} finally {
+			setCreating(false);
+		}
+	};
+
+	return (
+		<>
+			{/* Dropdown */}
+			<div
+				ref={menuRef}
+				className="absolute right-0 top-8 z-50 w-56 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden"
+			>
+				<div className="px-3 py-2 border-b border-white/5">
+					<p className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Add to Playlist</p>
+				</div>
+
+				<div className="max-h-48 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+					{loading && <p className="text-zinc-500 text-xs px-3 py-3">Loading playlists...</p>}
+					{!loading && userPlaylists.length === 0 && (
+						<p className="text-zinc-500 text-xs px-3 py-3">No playlists yet</p>
+					)}
+					{!loading && userPlaylists.map((pl) => (
+						<button
+							key={pl._id}
+							onClick={() => addToPlaylist(pl._id)}
+							className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition-colors text-left"
+						>
+							<div className="w-7 h-7 rounded-md bg-zinc-800 flex items-center justify-center shrink-0 overflow-hidden">
+								{pl.playlistImage
+									? <img src={`http://localhost:4000${pl.playlistImage}`} alt="" className="w-full h-full object-cover" />
+									: <ListMusic size={12} className="text-zinc-500" />
+								}
+							</div>
+							<span className="truncate flex-1">{pl.name}</span>
+						</button>
+					))}
+				</div>
+
+				<div className="border-t border-white/5">
+					<button
+						onClick={() => setShowModal(true)}
+						className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-violet-400 hover:bg-white/5 transition-colors"
+					>
+						<Plus size={14} />
+						New Playlist
+					</button>
+				</div>
+			</div>
+
+			{/* Create Playlist Modal */}
+			{showModal && createPortal (
+				<div
+					className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center"
+					onClick={handleModalClose}
+				>
+					<div
+						className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl"
+						onClick={(e) => e.stopPropagation()}
+					>
+						<div className="flex items-center justify-between mb-5">
+							<h2 className="text-white text-xl font-bold">Create Playlist</h2>
+							<button onClick={handleModalClose} className="text-zinc-500 hover:text-white transition-colors">
+								<X size={18} />
+							</button>
+						</div>
+
+						<div className="flex flex-col gap-4">
+							{/* Image Upload */}
+							<div>
+								<label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1.5 block">
+									Cover Image
+								</label>
+								<div
+									onClick={() => fileInputRef.current?.click()}
+									className="relative w-full h-36 rounded-xl border-2 border-dashed border-white/10 hover:border-violet-500/50 transition-colors cursor-pointer overflow-hidden flex items-center justify-center bg-zinc-800"
+								>
+									{imagePreview ? (
+										<>
+											<img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+											<div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+												<p className="text-white text-xs font-semibold">Change Image</p>
+											</div>
+										</>
+									) : (
+										<div className="flex flex-col items-center gap-2 text-zinc-600">
+											<Upload size={24} />
+											<p className="text-xs">Click to upload image</p>
+										</div>
+									)}
+								</div>
+								<input
+									ref={fileInputRef}
+									type="file"
+									accept="image/*"
+									onChange={handleImageChange}
+									className="hidden"
+								/>
+							</div>
+
+							{/* Name */}
+							<div>
+								<label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1.5 block">
+									Name <span className="text-violet-400">*</span>
+								</label>
+								<input
+									type="text"
+									value={newName}
+									onChange={(e) => setNewName(e.target.value)}
+									onKeyDown={(e) => e.key === "Enter" && createAndAdd()}
+									placeholder="My Playlist"
+									className="w-full bg-zinc-800 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors"
+								/>
+							</div>
+
+							{/* Description */}
+							<div>
+								<label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1.5 block">
+									Description
+								</label>
+								<input
+									type="text"
+									value={newDesc}
+									onChange={(e) => setNewDesc(e.target.value)}
+									placeholder="Optional description"
+									className="w-full bg-zinc-800 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors"
+								/>
+							</div>
+						</div>
+
+						<div className="flex gap-3 mt-6">
+							<button
+								onClick={handleModalClose}
+								className="flex-1 py-3 rounded-xl border border-white/10 text-zinc-400 text-sm font-semibold hover:bg-white/5 transition-colors"
+							>
+								Cancel
+							</button>
+							<button
+								onClick={createAndAdd}
+								disabled={!newName.trim() || creating}
+								className="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-600 text-white text-sm font-semibold shadow-lg shadow-violet-900/40 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+							>
+								{creating ? "Creating..." : "Create & Add"}
+							</button>
+						</div>
+					</div>
+				</div>,
+				document.body
+			)}
+		</>
+	);
+}
+
+// ── Main Component ─────────────────────────────────────────────────────────────
 function LandingPage() {
-    const [query, setQuery] = useState("");
-    const [results, setResults] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const controllerRef = useRef(null); 
+	const [query, setQuery] = useState("");
+	const [results, setResults] = useState([]);
+	const [loading, setLoading] = useState(false);
+	const controllerRef = useRef(null);
 	const [user, setUser] = useState(null);
-    const [error, setError] = useState(null);
+	const [error, setError] = useState(null);
 	const [profileImage, setProfileImage] = useState("");
+	const [openMenuTrackId, setOpenMenuTrackId] = useState(null);
 
 	const { playTrack, currentTrack, playing } = usePlayer();
 
-    useEffect(() => {
-        const delayDebounceFn = setTimeout(() => {
-            if (query.trim()) {
-                searchTracks(query);
-            } else {
-                setResults([]);
-            }
-        }, 500); 
-
-        return () => clearTimeout(delayDebounceFn);
-    }, [query]);
+	useEffect(() => {
+		const delayDebounceFn = setTimeout(() => {
+			if (query.trim()) {
+				searchTracks(query);
+			} else {
+				setResults([]);
+			}
+		}, 500);
+		return () => clearTimeout(delayDebounceFn);
+	}, [query]);
 
 	useEffect(() => {
-        const fetchUserDetails = async () => {
-            const token = localStorage.getItem("token");
-            
-            if (!token) {
-                setError("Not authenticated");
-                return;
-            }
-
-            try {
-                const decodedToken = jwtDecode(token);
-                const extractedId = decodedToken._id;
-				console.log("1. Decoded Token:", decodedToken);
-
-                const response = await axios.get(`/api/user/${extractedId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                
-                setUser(response.data);
-                if (response.data.profileImage) {
+		const fetchUserDetails = async () => {
+			const token = localStorage.getItem("token");
+			if (!token) { setError("Not authenticated"); return; }
+			try {
+				const decodedToken = jwtDecode(token);
+				const extractedId = decodedToken._id;
+				const response = await axios.get(`/api/user/${extractedId}`, {
+					headers: { Authorization: `Bearer ${token}` },
+				});
+				setUser(response.data);
+				if (response.data.profileImage) {
 					setProfileImage(`http://localhost:4000${response.data.profileImage}`);
 				}
-            } catch (err) {
-                console.error("Failed to load profile:", err);
-                setError("Could not load profile.");
-            }
-        };
-        fetchUserDetails();
-    }, []);
+			} catch (err) {
+				console.error("Failed to load profile:", err);
+				setError("Could not load profile.");
+			}
+		};
+		fetchUserDetails();
+	}, []);
 
-    const searchTracks = async (searchTerm) => {
-        // Cancel previous request if still in flight
-        if (controllerRef.current) {
-            controllerRef.current.abort();
-        }
-
-        // Create a new controller for the current request
-        controllerRef.current = new AbortController();
-
-        const token = localStorage.getItem("token"); 
-
-        setLoading(true);
-        try {
-            const response = await axios.get(
-                `/api/deezer/search?q=${searchTerm}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`, 
-                    },
-                    signal: controllerRef.current.signal,
-                },
-            );
-            setResults(response.data.results); 
-            console.log(response.data);
-        } catch (error) {
-            if (axios.isCancel(error)) {
-                console.log("Request canceled successfully");
-            } else {
-                console.error("Actual search error:", error);
-            }
-        } finally {
-            setLoading(false); 
-        }
-    };
+	const searchTracks = async (searchTerm) => {
+		if (controllerRef.current) controllerRef.current.abort();
+		controllerRef.current = new AbortController();
+		const token = localStorage.getItem("token");
+		setLoading(true);
+		try {
+			const response = await axios.get(`/api/deezer/search?q=${searchTerm}`, {
+				headers: { Authorization: `Bearer ${token}` },
+				signal: controllerRef.current.signal,
+			});
+			setResults(response.data.results);
+		} catch (error) {
+			if (!axios.isCancel(error)) console.error("Actual search error:", error);
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	return (
 		<div className="flex bg-zinc-950 min-h-screen text-white">
 			<Sidebar />
 
-			{/* Main Content */}
 			<div className="flex-1 overflow-y-auto pb-28">
 				{/* Top bar */}
 				<div className="sticky top-0 z-10 bg-zinc-950/80 backdrop-blur-xl px-8 py-4 flex items-center justify-between border-b border-white/5">
-					{/* <div className="flex gap-3">
-						{["All", "Music", "Podcasts", "Live"].map((tab, i) => (
-							<button
-								key={tab}
-								className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-									i === 0
-										? "bg-violet-600 text-white shadow-lg shadow-violet-900/40"
-										: "text-zinc-400 hover:text-white bg-zinc-800/60 hover:bg-zinc-700/60"
-								}`}
-							>
-								{tab}
-							</button>
-						))}
-					</div> */}
 					<div className="relative w-full max-w-md">
 						<input
 							type="text"
 							placeholder="Search songs, artists..."
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
-							className="w-full bg-zinc-800/70 text-white placeholder-zinc-400 
-               px-4 py-2.5 pl-10 rounded-full 
-               focus:outline-none focus:ring-2 
-               focus:ring-violet-500/50 transition-all"
+							className="w-full bg-zinc-800/70 text-white placeholder-zinc-400 px-4 py-2.5 pl-10 rounded-full focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
 						/>
-
-						<Search
-							size={18}
-							className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
-						/>
+						<Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
 
 						{/* Dropdown */}
 						{query && (
 							<div className="absolute top-14 w-full bg-zinc-900 border border-white/5 rounded-xl shadow-xl max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden">
-								{loading && (
-									<p className="p-4 text-sm text-zinc-400">Searching...</p>
-								)}
+								{loading && <p className="p-4 text-sm text-zinc-400">Searching...</p>}
+								{!loading && results.length === 0 && <p className="p-4 text-sm text-zinc-400">No results found</p>}
+								{!loading && results.slice(0, 8).map((track) => (
+									<div
+										key={track.id}
+										className="flex items-center gap-3 p-3 hover:bg-white/5 transition-colors group"
+									>
+										{/* Album art — clicking plays */}
+										<img
+											src={track.album.cover}
+											alt={track.title}
+											onClick={() => { playTrack(track); setQuery(""); setResults([]); }}
+											className="w-10 h-10 rounded-md cursor-pointer shrink-0"
+										/>
 
-								{!loading && results.length === 0 && (
-									<p className="p-4 text-sm text-zinc-400">No results found</p>
-								)}
-
-								{!loading &&
-									results.slice(0, 8).map((track) => (
+										{/* Title — clicking plays */}
 										<div
-											key={track.id}
-											onClick={() => {
-												playTrack(track)
-												setQuery("")
-  												setResults([])
-											} 
-											}
-											className="flex items-center gap-3 p-3 hover:bg-white/5 cursor-pointer transition-colors"
+											className="min-w-0 flex-1 cursor-pointer"
+											onClick={() => { playTrack(track); setQuery(""); setResults([]); }}
 										>
-											<img
-												src={track.album.cover}
-												alt={track.title}
-												className="w-10 h-10 rounded-md"
-											/>
-
-											<div className="min-w-0">
-												<p className="text-sm text-white truncate">
-													{track.title}
-												</p>
-												<p className="text-xs text-zinc-400 truncate">
-													{track.artist.name}
-												</p>
-											</div>
+											<p className="text-sm text-white truncate">{track.title}</p>
+											<p className="text-xs text-zinc-400 truncate">{track.artist.name}</p>
 										</div>
-									))}
+
+										{/* 3-dot menu */}
+										<div className="relative shrink-0">
+											<button
+												onClick={(e) => {
+													e.stopPropagation();
+													setOpenMenuTrackId(openMenuTrackId === track.id ? null : track.id);
+												}}
+												className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-white/5 transition-colors opacity-0 group-hover:opacity-100"
+											>
+												<MoreHorizontal size={16} />
+											</button>
+											{openMenuTrackId === track.id && (
+												<TrackMenu
+													track={track}
+													onClose={() => setOpenMenuTrackId(null)}
+												/>
+											)}
+										</div>
+									</div>
+								))}
 							</div>
 						)}
 					</div>
+
 					<div className="flex items-center gap-3">
 						{profileImage ? (
-						<img 
-							src={profileImage} 
-							alt="Profile" 
-							className="w-8 h-8 rounded-full object-cover ring-2 ring-violet-500/30" 
-						/>
+							<img src={profileImage} alt="Profile" className="w-8 h-8 rounded-full object-cover ring-2 ring-violet-500/30" />
 						) : (
-						<div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 ring-2 ring-violet-500/30" />
+							<div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 ring-2 ring-violet-500/30" />
 						)}
 						<span className="text-sm font-medium text-zinc-300">{user?.username}</span>
 					</div>
@@ -299,21 +470,13 @@ function LandingPage() {
 							<Badge className="w-fit bg-violet-600/80 backdrop-blur text-white border-violet-500/30 text-xs">
 								🔥 Featured Artist
 							</Badge>
-							<h1 className="text-4xl font-black tracking-tight text-white drop-shadow-xl">
-								The Weeknd
-							</h1>
-							<p className="text-zinc-400 text-sm max-w-xs">
-								After Hours • 14 tracks • 56 min
-							</p>
+							<h1 className="text-4xl font-black tracking-tight text-white drop-shadow-xl">The Weeknd</h1>
+							<p className="text-zinc-400 text-sm max-w-xs">After Hours • 14 tracks • 56 min</p>
 							<div className="flex items-center gap-3 mt-1">
 								<Button className="bg-violet-600 hover:bg-violet-500 text-white rounded-full px-6 shadow-lg shadow-violet-900/50 gap-2 transition-all duration-200 hover:scale-105">
-									<Play size={14} fill="white" />
-									Play Now
+									<Play size={14} fill="white" /> Play Now
 								</Button>
-								<Button
-									variant="outline"
-									className="rounded-full border-white/20 text-white bg-white/5 hover:bg-white/10 backdrop-blur"
-								>
+								<Button variant="outline" className="rounded-full border-white/20 text-white bg-white/5 hover:bg-white/10 backdrop-blur">
 									View Album
 								</Button>
 							</div>
@@ -323,17 +486,11 @@ function LandingPage() {
 					{/* Featured Playlists */}
 					<section>
 						<div className="flex items-center justify-between mb-5">
-							<h2 className="text-xl font-bold text-white">
-								Featured Playlists
-							</h2>
-							<button className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium">
-								See all →
-							</button>
+							<h2 className="text-xl font-bold text-white">Featured Playlists</h2>
+							<button className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium">See all →</button>
 						</div>
 						<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-							{playlists.map((pl) => (
-								<PlaylistCard key={pl.title} {...pl} />
-							))}
+							{playlists.map((pl) => <PlaylistCard key={pl.title} {...pl} />)}
 						</div>
 					</section>
 
@@ -344,54 +501,29 @@ function LandingPage() {
 								<TrendingUp size={20} className="text-violet-400" />
 								<h2 className="text-xl font-bold text-white">Trending Now</h2>
 							</div>
-							<button className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium">
-								See all →
-							</button>
+							<button className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium">See all →</button>
 						</div>
 						<div className="bg-zinc-900/60 rounded-2xl border border-white/5 overflow-hidden">
 							<div className="grid grid-cols-[40px_1fr_1fr_80px_40px] gap-4 px-5 py-3 border-b border-white/5 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
 								<span>#</span>
 								<span>Title</span>
 								<span>Album</span>
-								<span className="flex items-center gap-1 justify-end">
-									<Clock size={12} /> Time
-								</span>
+								<span className="flex items-center gap-1 justify-end"><Clock size={12} /> Time</span>
 								<span />
 							</div>
 							{trendingTracks.map((track) => (
-								<div
-									key={track.title}
-									className="grid grid-cols-[40px_1fr_1fr_80px_40px] gap-4 px-5 py-3 items-center hover:bg-white/5 transition-colors group cursor-pointer border-b border-white/[0.03] last:border-0"
-								>
-									<span className="text-zinc-600 text-sm font-medium group-hover:hidden">
-										{track.rank}
-									</span>
-									<Play
-										size={14}
-										className="text-violet-400 hidden group-hover:block"
-										fill="currentColor"
-									/>
+								<div key={track.title} className="grid grid-cols-[40px_1fr_1fr_80px_40px] gap-4 px-5 py-3 items-center hover:bg-white/5 transition-colors group cursor-pointer border-b border-white/[0.03] last:border-0">
+									<span className="text-zinc-600 text-sm font-medium group-hover:hidden">{track.rank}</span>
+									<Play size={14} className="text-violet-400 hidden group-hover:block" fill="currentColor" />
 									<div className="flex items-center gap-3 min-w-0">
-										<img
-											src={track.img}
-											alt={track.title}
-											className="w-9 h-9 rounded-lg object-cover shrink-0"
-										/>
+										<img src={track.img} alt={track.title} className="w-9 h-9 rounded-lg object-cover shrink-0" />
 										<div className="min-w-0">
-											<p className="text-white text-sm font-medium truncate group-hover:text-violet-300 transition-colors">
-												{track.title}
-											</p>
-											<p className="text-zinc-500 text-xs truncate">
-												{track.artist}
-											</p>
+											<p className="text-white text-sm font-medium truncate group-hover:text-violet-300 transition-colors">{track.title}</p>
+											<p className="text-zinc-500 text-xs truncate">{track.artist}</p>
 										</div>
 									</div>
-									<span className="text-zinc-500 text-sm truncate">
-										{track.album}
-									</span>
-									<span className="text-zinc-500 text-sm text-right">
-										{track.duration}
-									</span>
+									<span className="text-zinc-500 text-sm truncate">{track.album}</span>
+									<span className="text-zinc-500 text-sm text-right">{track.duration}</span>
 									<button className="text-zinc-700 hover:text-zinc-400 transition-colors opacity-0 group-hover:opacity-100">
 										<MoreHorizontal size={16} />
 									</button>
@@ -406,4 +538,5 @@ function LandingPage() {
 		</div>
 	);
 }
+
 export default LandingPage;

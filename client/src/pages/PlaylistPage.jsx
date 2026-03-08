@@ -175,7 +175,7 @@ export default function Playlists() {
                                 return (
                                     <div
                                         key={playlist._id}
-                                        onClick={() => navigate(`/playlists/${playlist._id}`)}
+                                        onClick={() => navigate(`/playlist/${playlist._id}`)}
                                         className="group cursor-pointer"
                                     >
                                         {/* Cover */}
@@ -188,7 +188,7 @@ export default function Playlists() {
                                             {/* Hover overlay */}
                                             <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-3">
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); /* play logic */ }}
+                                                    onClick={(e) => { e.stopPropagation(); navigate(`/playlist/${playlist._id}`); }}
                                                     className="w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center hover:bg-white/30 transition-colors"
                                                 >
                                                     <Play size={16} fill="white" className="text-white ml-0.5" />

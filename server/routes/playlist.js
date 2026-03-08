@@ -7,7 +7,8 @@ const {
     deletePlaylist, 
     addToPlaylist, 
     removeFromPlaylist,
-    getAllPlaylists
+    getAllPlaylists,
+    getPlaylistById
 } = require('../controller/playlistController');
 
 const router = express.Router();
@@ -19,5 +20,6 @@ router.post('/', upload.single('playlistImage'), createPlaylist);
 router.delete('/:id', deletePlaylist);
 router.post('/:id/tracks', addToPlaylist);
 router.delete('/:id/tracks', removeFromPlaylist);
+router.get('/:id', getPlaylistById);
 
 module.exports = router;

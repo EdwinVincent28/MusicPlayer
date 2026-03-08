@@ -46,7 +46,7 @@ const deletePlaylist = async (req, res) => {
 
 const addToPlaylist = async (req, res) => {
     const { id } = req.params;
-    const { trackId, title, artist, cover, preview } = req.body;
+    const { trackId, title, artist, cover, preview, duration } = req.body;
 
     if (!trackId) {
         return res.status(400).json({ error: 'Track ID is required' });
@@ -65,7 +65,7 @@ const addToPlaylist = async (req, res) => {
             return res.status(400).json({ error: 'Track already in playlist' });
         }
 
-        playlist.playlistSongs.set(key, { title, artist, cover, preview });
+        playlist.playlistSongs.set(key, { title, artist, cover, preview, duration });
         await playlist.save();
 
         res.status(200).json(playlist);
@@ -120,10 +120,27 @@ const getAllPlaylists = async (req, res) => {
     }
 };
 
+const getPlaylistById = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const playlist = await Playlist.findById(id);
+
+        if (!playlist) {
+            return res.status(404).json({ error: 'Playlist not found' });
+        }
+
+        res.status(200).json(playlist);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
     createPlaylist,
     deletePlaylist,
     addToPlaylist,
     removeFromPlaylist,
-    getAllPlaylists
+    getAllPlaylists,
+    getPlaylistById
 };
