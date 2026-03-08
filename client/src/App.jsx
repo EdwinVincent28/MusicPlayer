@@ -7,6 +7,7 @@ import { SignupForm } from "./pages/SignupForm";
 import LandingPage from "./pages/LandingPage";
 import Like from "./pages/LikedSongs.jsx";
 import { PlayerProvider } from "./context/PlayerContext.jsx";
+import Playlists from "./pages/PlaylistPage";
 
 function App() {
 	return (
@@ -15,7 +16,7 @@ function App() {
 				<Route path="/" element={<LoginForm />} />
 				<Route path="/signup" element={<SignupForm />} />
 				<Route path="/like" element={<Like />} />
-				<Route path="/playlist" element={<h1>Playlists</h1>} />
+				<Route path="/playlist" element={<Playlists />} />
 				<Route path="/artist/:id" element={<ArtistPage />} />
 				<Route path="/artists" element={<ArtistsPage />} />
 				<Route path="/home" element={<LandingPage />} />

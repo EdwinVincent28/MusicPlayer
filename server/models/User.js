@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema({
             artist: String,
             cover: String,
             preview: String,
-            // duration: Number,
+            duration: Number,
         }, { _id: false }),
         default: {}
     },

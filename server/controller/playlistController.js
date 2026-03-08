@@ -4,13 +4,14 @@ const User = require('../models/User');
 const createPlaylist = async (req, res) => {
     const { name, description } = req.body;
     const userId = req.user._id;
+    const playlistImage = req.file ? `/images/${req.file.filename}` : null;
 
     if (!name) {
         return res.status(400).json({ error: 'Playlist name is required' });
     }
 
     try {
-        const playlist = await Playlist.create({ name, description });
+        const playlist = await Playlist.create({ name, description, playlistImage });
 
         await User.findByIdAndUpdate(userId, {
             $push: { playlists: playlist._id }
@@ -44,25 +45,30 @@ const deletePlaylist = async (req, res) => {
 };
 
 const addToPlaylist = async (req, res) => {
-    const { id } = req.params; 
-    const { trackId } = req.body; 
+    const { id } = req.params;
+    const { trackId, title, artist, cover, preview } = req.body;
 
     if (!trackId) {
         return res.status(400).json({ error: 'Track ID is required' });
     }
 
     try {
-        const updatedPlaylist = await Playlist.findByIdAndUpdate(
-            id,
-            { $addToSet: { tracks: trackId } },
-            { new: true } 
-        );
+        const playlist = await Playlist.findById(id);
 
-        if (!updatedPlaylist) {
+        if (!playlist) {
             return res.status(404).json({ error: 'Playlist not found' });
         }
 
-        res.status(200).json(updatedPlaylist);
+        const key = trackId.toString();
+
+        if (playlist.playlistSongs.has(key)) {
+            return res.status(400).json({ error: 'Track already in playlist' });
+        }
+
+        playlist.playlistSongs.set(key, { title, artist, cover, preview });
+        await playlist.save();
+
+        res.status(200).json(playlist);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -77,17 +83,22 @@ const removeFromPlaylist = async (req, res) => {
     }
 
     try {
-        const updatedPlaylist = await Playlist.findByIdAndUpdate(
-            id,
-            { $pull: { tracks: trackId } },
-            { new: true }
-        );
+        const playlist = await Playlist.findById(id);
 
-        if (!updatedPlaylist) {
+        if (!playlist) {
             return res.status(404).json({ error: 'Playlist not found' });
         }
 
-        res.status(200).json(updatedPlaylist);
+        const key = trackId.toString();
+
+        if (!playlist.playlistSongs.has(key)) {
+            return res.status(404).json({ error: 'Track not found in playlist' });
+        }
+
+        playlist.playlistSongs.delete(key);
+        await playlist.save();
+
+        res.status(200).json(playlist);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

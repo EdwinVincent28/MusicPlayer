@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import {
 	Play,
 	Pause,
@@ -30,6 +31,24 @@ export default function MusicPlayer() {
 	} = usePlayer();
 	const [liked, setLiked] = useState(false);
 
+	useEffect(() => {
+		if (!currentTrack?.id) return;
+		const fetchLikedStatus = async () => {
+			try {
+				const token = localStorage.getItem("token");
+				const { data } = await axios.get(
+					`/api/user/like/${currentTrack.id}`,
+					{ headers: { Authorization: `Bearer ${token}` } }
+				);
+				setLiked(data.liked);
+			} catch (err) {
+				console.error("Failed to fetch liked status:", err);
+				setLiked(false);
+			}
+		};
+		fetchLikedStatus();
+	}, [currentTrack?.id]);
+
 	// Hide player when nothing is selected
 	if (!currentTrack) return null;
 
@@ -40,13 +59,34 @@ export default function MusicPlayer() {
 
 	const hasPreview = !!currentTrack.preview;
 
+	const handleLike = async () => {
+		try {
+			const token = localStorage.getItem("token");
+			await axios.put(
+				"/api/user/like",
+				{
+					trackId: currentTrack.id,
+					title: currentTrack.title,
+					artist: currentTrack.artist?.name || currentTrack.artist,
+					cover: currentTrack.album?.cover || currentTrack.cover,
+					preview: currentTrack.preview,
+					duration: currentTrack.duration,
+				},
+				{ headers: { Authorization: `Bearer ${token}` } }
+			);
+			setLiked((prev) => !prev);
+		} catch (err) {
+			console.error("Failed to like/unlike track:", err);
+		}
+	};
+
 	return (
 		<div className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900/90 backdrop-blur-2xl border-t border-white/5 px-6 py-4 flex items-center justify-between gap-4">
 			{/* Track Info */}
 			<div className="flex items-center gap-4 w-64 shrink-0">
 				<div className="relative shrink-0">
 					<img
-						src={currentTrack.cover || currentTrack.album?.cover_medium}
+						src={currentTrack.album?.cover || currentTrack.cover}
 						alt="Now Playing"
 						style={playing ? { animation: "spin 8s linear infinite" } : {}}
 						className="w-14 h-14 rounded-xl object-cover ring-2 ring-violet-500/30 transition-all duration-300"
@@ -72,7 +112,7 @@ export default function MusicPlayer() {
 					)}
 				</div>
 				<button
-					onClick={() => setLiked(!liked)}
+					onClick={handleLike}
 					className={`ml-auto shrink-0 transition-colors duration-200 ${liked ? "text-violet-400" : "text-zinc-600 hover:text-zinc-300"}`}
 				>
 					<Heart size={18} fill={liked ? "currentColor" : "none"} />
@@ -85,7 +125,11 @@ export default function MusicPlayer() {
 					<button className="text-zinc-500 hover:text-white transition-colors">
 						<Shuffle size={18} />
 					</button>
-					<button className="text-zinc-400 hover:text-white transition-colors">
+					<button
+						onClick={skipPrev}
+						disabled={!hasPrev}
+						className="text-zinc-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+					>
 						<SkipBack size={22} fill="currentColor" />
 					</button>
 					<button
@@ -99,7 +143,11 @@ export default function MusicPlayer() {
 							<Play size={18} fill="white" className="text-white ml-0.5" />
 						)}
 					</button>
-					<button className="text-zinc-400 hover:text-white transition-colors">
+					<button
+						onClick={skipNext}
+						disabled={!hasNext}
+						className="text-zinc-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+					>
 						<SkipForward size={22} fill="currentColor" />
 					</button>
 					<button className="text-zinc-500 hover:text-white transition-colors">

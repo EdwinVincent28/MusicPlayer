@@ -15,7 +15,7 @@ function formatDuration(seconds) {
 export default function LikedSongs() {
     const [likedSongs, setLikedSongs] = useState([]);
     const [loading, setLoading] = useState(true);
-    const { playTrack, currentTrack, playing } = usePlayer();
+    const { playTrack, currentTrack, playing, playQueue } = usePlayer();
 
     useEffect(() => {
         const fetchLikedSongs = async () => {
@@ -57,7 +57,8 @@ export default function LikedSongs() {
             preview: song.preview,
             duration: song.duration,
             artist: { name: song.artist },
-            album: { cover: song.cover },
+            cover: song.cover,
+            album: { cover_medium: song.cover },
         });
     };
 
@@ -107,10 +108,34 @@ export default function LikedSongs() {
 
                 {/* Controls */}
                 <div className="px-8 py-6 flex items-center gap-5 border-b border-white/5">
-                    <button className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-900/60 hover:scale-105 active:scale-95 transition-transform duration-150">
+                    <button
+                        onClick={() => playQueue(likedSongs.map((song) => ({
+                            id: song.id,
+                            title: song.title,
+                            preview: song.preview,
+                            duration: song.duration,
+                            artist: { name: song.artist },
+                            album: { cover: song.cover },
+                        })), 0)}
+                        className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-900/60 hover:scale-105 active:scale-95 transition-transform duration-150"
+                    >
                         <Play size={22} fill="white" className="text-white ml-1" />
                     </button>
-                    <button className="text-zinc-400 hover:text-white transition-colors">
+                    <button
+                        onClick={() => {
+                            const shuffled = [...likedSongs].sort(() => Math.random() - 0.5);
+                            playQueue(shuffled.map((song) => ({
+                                id: song.id,
+                                title: song.title,
+                                preview: song.preview,
+                                duration: song.duration,
+                                artist: { name: song.artist },
+                                album: { cover: song.cover },
+                            })), 0);
+                            // console.log(playQueue);
+                        }}
+                        className="text-zinc-400 hover:text-white transition-colors"
+                    >
                         <Shuffle size={22} />
                     </button>
                 </div>
@@ -123,7 +148,7 @@ export default function LikedSongs() {
                         <span>Title</span>
                         <span>Artist</span>
                         <span className="flex items-center gap-1 justify-end">
-                            <Clock size={12} /> Time
+                            <Clock size={12} /> Duration
                         </span>
                         <span />
                     </div>
