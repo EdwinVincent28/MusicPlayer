@@ -11,6 +11,7 @@ import {
 	ListMusic,
 	Music2,
 	ChevronRight,
+	MoreHorizontal
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,8 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { usePlayer } from "../context/PlayerContext";
 import { jwtDecode } from "jwt-decode";
+
+import TrackMenu from "@/components/TrackMenu";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const PROXY = "https://corsproxy.io/?";
@@ -191,6 +194,7 @@ export default function LandingPage() {
 	const [showDropdown, setShowDropdown] = useState(false);
 	const controllerRef = useRef(null);
 	const dropdownRef = useRef(null);
+	const [openMenuTrackId, setOpenMenuTrackId] = useState(null);
 
 	// ── User state (original functionality, kept as-is) ──────────────────────
 	const [user, setUser] = useState(null);
@@ -211,12 +215,14 @@ export default function LandingPage() {
 	// ── Close dropdown on outside click ──────────────────────────────────────
 	useEffect(() => {
 		const handler = (e) => {
+			// Don't close if a TrackMenu is open (it manages its own outside clicks)
+			if (openMenuTrackId !== null) return;
 			if (dropdownRef.current && !dropdownRef.current.contains(e.target))
 				setShowDropdown(false);
 		};
 		document.addEventListener("mousedown", handler);
 		return () => document.removeEventListener("mousedown", handler);
-	}, []);
+	}, [openMenuTrackId]);
 
 	// ── Fetch user (original logic, kept as-is) ───────────────────────────────
 	useEffect(() => {
@@ -231,7 +237,7 @@ export default function LandingPage() {
 				});
 				setUser(response.data);
 				if (response.data.profileImage)
-					setProfileImage(`http://localhost:4000${response.data.profileImage}`);
+					setProfileImage(response.data.profileImage);
 			} catch (err) {
 				console.error("Failed to load profile:", err);
 			}
@@ -355,48 +361,68 @@ export default function LandingPage() {
 							className="w-full bg-zinc-800/70 text-white placeholder-zinc-500 pl-10 pr-4 py-2.5 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
 						/>
 						{showDropdown && query.trim() && (
-							<div className="absolute top-12 w-full bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/60 max-h-80 overflow-y-auto z-50 [&::-webkit-scrollbar]:hidden">
-								{searchLoading && (
-									<div className="flex items-center gap-3 p-4">
-										<div className="w-4 h-4 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
-										<p className="text-sm text-zinc-400">Searching...</p>
-									</div>
-								)}
-								{!searchLoading && results.length === 0 && (
-									<p className="p-4 text-sm text-zinc-400">
-										No results for "{query}"
-									</p>
-								)}
-								{!searchLoading &&
-									results.slice(0, 8).map((track) => (
-										<div
-											key={track.id}
-											onClick={() => {
-												playTrack(track);
-												setQuery("");
-												setResults([]);
-												setShowDropdown(false);
-											}}
-											className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 cursor-pointer transition-colors group border-b border-white/[0.04] last:border-0"
-										>
-											<img
-												src={track.album?.cover || track.album?.cover_small}
-												alt={track.title}
-												className="w-10 h-10 rounded-lg object-cover shrink-0"
-											/>
-											<div className="min-w-0 flex-1">
-												<p className="text-sm text-white font-medium truncate group-hover:text-violet-300 transition-colors">
-													{track.title}
-												</p>
-												<p className="text-xs text-zinc-500 truncate">
-													{track.artist?.name}
-												</p>
-											</div>
-											<span className="text-xs text-zinc-600 shrink-0">
-												{formatDuration(track.duration)}
-											</span>
+							<div className="absolute top-12 w-full bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/60 z-50">
+								<div className="max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden rounded-2xl">
+									{searchLoading && (
+										<div className="flex items-center gap-3 p-4">
+											<div className="w-4 h-4 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
+											<p className="text-sm text-zinc-400">Searching...</p>
 										</div>
-									))}
+									)}
+									{!searchLoading && results.length === 0 && (
+										<p className="p-4 text-sm text-zinc-400">No results for "{query}"</p>
+									)}
+									{!searchLoading &&
+										results.slice(0, 8).map((track) => (
+											<div
+												key={track.id}
+												className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors group border-b border-white/[0.04] last:border-0"
+											>
+												<img
+													src={track.album?.cover || track.album?.cover_small}
+													alt={track.title}
+													onClick={() => { playTrack(track); setQuery(""); setResults([]); setShowDropdown(false); }}
+													className="w-10 h-10 rounded-lg object-cover shrink-0 cursor-pointer"
+												/>
+												<div
+													className="min-w-0 flex-1 cursor-pointer"
+													onClick={() => { playTrack(track); setQuery(""); setResults([]); setShowDropdown(false); }}
+												>
+													<p className="text-sm text-white font-medium truncate group-hover:text-violet-300 transition-colors">
+														{track.title}
+													</p>
+													<p className="text-xs text-zinc-500 truncate">{track.artist?.name}</p>
+												</div>
+												<span className="text-xs text-zinc-600 shrink-0">{formatDuration(track.duration)}</span>
+
+												{/* 3-dot menu — sits OUTSIDE the scrollable div's overflow */}
+												<div className="relative shrink-0">
+													<button
+														onClick={(e) => {
+															e.stopPropagation();
+															setOpenMenuTrackId(openMenuTrackId === track.id ? null : track.id);
+														}}
+														className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-white/5 transition-colors opacity-0 group-hover:opacity-100"
+													>
+														<MoreHorizontal size={16} />
+													</button>
+													{openMenuTrackId === track.id && (
+														<TrackMenu
+															trackData={{
+																id: track.id,
+																title: track.title,
+																artist: track.artist?.name,
+																cover: track.album?.cover_medium || track.album?.cover || track.album?.cover_big || track.album?.cover_small,
+																preview: track.preview,
+																duration: track.duration,
+															}}
+															onClose={() => setOpenMenuTrackId(null)}
+														/>
+													)}
+												</div>
+											</div>
+										))}
+								</div>
 							</div>
 						)}
 					</div>
@@ -517,107 +543,117 @@ export default function LandingPage() {
 					<section>
 						<div className="flex items-center gap-2 mb-4">
 							<Music2 size={18} className="text-violet-400" />
-							<h2 className="text-lg font-bold text-white">
-								Charts — Full List
-							</h2>
+							<h2 className="text-lg font-bold text-white">Trending Songs</h2>
 						</div>
 						<div className="bg-zinc-900/60 rounded-2xl border border-white/5 overflow-hidden">
-							<div className="grid grid-cols-[40px_1fr_1fr_80px] gap-4 px-5 py-3 border-b border-white/5 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
+							{/* Header */}
+							<div className="grid grid-cols-[40px_1fr_1fr_80px_40px] gap-4 px-5 py-3 border-b border-white/5 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
 								<span>#</span>
 								<span>Title</span>
 								<span>Album</span>
 								<span className="flex items-center gap-1 justify-end">
 									<Clock size={12} /> Time
 								</span>
+								<span />
 							</div>
+
+							{/* Rows */}
 							{tracksLoading
-								? Array.from({ length: 5 }).map((_, i) => (
-										<TrackSkeleton key={i} />
-									))
+								? Array.from({ length: 5 }).map((_, i) => <TrackSkeleton key={i} />)
 								: trendingTracks.slice(0, 10).map((track, i) => {
-										const isActive = currentTrack?.id === track.id;
-										const isPlaying = isActive && playing;
-										return (
-											<div
-												key={track.id}
-												onClick={() => {
-													if (isActive) {
-														togglePlay();
-														return;
-													}
-													const queue = trendingTracks.map((t) => ({
-														id: t.id,
-														title: t.title,
-														artist: t.artist?.name,
-														cover: t.album?.cover_medium,
-														duration: t.duration,
-														preview: t.preview,
-													}));
-													playQueue(queue, i);
-												}}
-												className={`grid grid-cols-[40px_1fr_1fr_80px] gap-4 px-5 py-3 items-center cursor-pointer transition-colors group border-b border-white/[0.03] last:border-0
+									const isActive = currentTrack?.id === track.id;
+									const isPlaying = isActive && playing;
+									return (
+										<div
+											key={track.id}
+											onClick={(e) => {
+												if (e.defaultPrevented) return;
+												if (isActive) { togglePlay(); return; }
+												const queue = trendingTracks.map((t) => ({
+													id: t.id,
+													title: t.title,
+													artist: t.artist?.name,
+													cover: t.album?.cover_medium,
+													duration: t.duration,
+													preview: t.preview,
+												}));
+												playQueue(queue, i);
+											}}
+											className={`grid grid-cols-[40px_1fr_1fr_80px_40px] gap-4 px-5 py-3 items-center cursor-pointer transition-colors group border-b border-white/[0.03] last:border-0
 												${isActive ? "bg-violet-600/10" : "hover:bg-white/5"}`}
-											>
-												<div className="flex items-center justify-center">
-													<span
-														className={`text-sm font-medium group-hover:hidden ${isActive ? "text-violet-400" : "text-zinc-600"}`}
-													>
-														{i + 1}
-													</span>
-													{isPlaying ? (
-														<Pause
-															size={14}
-															className="text-violet-400 hidden group-hover:block"
-															fill="currentColor"
-														/>
-													) : (
-														<Play
-															size={14}
-															className="text-violet-400 hidden group-hover:block"
-															fill="currentColor"
-														/>
-													)}
-												</div>
-												<div className="flex items-center gap-3 min-w-0">
-													<img
-														src={track.album?.cover_small}
-														alt={track.title}
-														className="w-9 h-9 rounded-lg object-cover shrink-0"
-													/>
-													<div className="min-w-0">
-														<p
-															className={`text-sm font-medium truncate transition-colors ${isActive ? "text-violet-300" : "text-white group-hover:text-violet-300"}`}
-														>
-															{track.title}
-														</p>
-														<p className="text-zinc-500 text-xs truncate">
-															{track.artist?.name}
-														</p>
-													</div>
-													{isPlaying && (
-														<span className="shrink-0 flex gap-0.5 items-end h-3 ml-1">
-															{[1, 2, 3].map((b) => (
-																<span
-																	key={b}
-																	className="w-0.5 bg-violet-500 rounded-full animate-pulse"
-																	style={{
-																		height: `${8 + b * 3}px`,
-																		animationDelay: `${b * 0.15}s`,
-																	}}
-																/>
-															))}
-														</span>
-													)}
-												</div>
-												<span className="text-zinc-500 text-sm truncate">
-													{track.album?.title}
+										>
+											{/* Col 1 — index / play icon */}
+											<div className="flex items-center justify-center">
+												<span className={`text-sm font-medium group-hover:hidden ${isActive ? "text-violet-400" : "text-zinc-600"}`}>
+													{i + 1}
 												</span>
-												<span className="text-zinc-500 text-sm text-right">
-													{formatDuration(track.duration)}
-												</span>
+												{isPlaying ? (
+													<Pause size={14} className="text-violet-400 hidden group-hover:block" fill="currentColor" />
+												) : (
+													<Play size={14} className="text-violet-400 hidden group-hover:block" fill="currentColor" />
+												)}
 											</div>
-										);
-									})}
+
+											{/* Col 2 — title + cover */}
+											<div className="flex items-center gap-3 min-w-0">
+												<img
+													src={track.album?.cover_small}
+													alt={track.title}
+													className="w-9 h-9 rounded-lg object-cover shrink-0"
+												/>
+												<div className="min-w-0">
+													<p className={`text-sm font-medium truncate transition-colors ${isActive ? "text-violet-300" : "text-white group-hover:text-violet-300"}`}>
+														{track.title}
+													</p>
+													<p className="text-zinc-500 text-xs truncate">{track.artist?.name}</p>
+												</div>
+												{isPlaying && (
+													<span className="shrink-0 flex gap-0.5 items-end h-3 ml-1">
+														{[1, 2, 3].map((b) => (
+															<span
+																key={b}
+																className="w-0.5 bg-violet-500 rounded-full animate-pulse"
+																style={{ height: `${8 + b * 3}px`, animationDelay: `${b * 0.15}s` }}
+															/>
+														))}
+													</span>
+												)}
+											</div>
+
+											{/* Col 3 — album */}
+											<span className="text-zinc-500 text-sm truncate">{track.album?.title}</span>
+
+											{/* Col 4 — duration */}
+											<span className="text-zinc-500 text-sm text-right">{formatDuration(track.duration)}</span>
+
+											{/* Col 5 — 3-dot menu */}
+											<div className="relative flex items-center justify-center">
+												<button
+													onClick={(e) => {
+														e.stopPropagation();
+														setOpenMenuTrackId(openMenuTrackId === track.id ? null : track.id);
+													}}
+													className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-white/5 transition-colors opacity-0 group-hover:opacity-100"
+												>
+													<MoreHorizontal size={16} />
+												</button>
+												{openMenuTrackId === track.id && (
+													<TrackMenu
+														trackData={{
+															id: track.id,
+															title: track.title,
+															artist: track.artist?.name,
+															cover: track.album?.cover_medium,
+															preview: track.preview,
+															duration: track.duration,
+														}}
+														onClose={() => setOpenMenuTrackId(null)}
+													/>
+												)}
+											</div>
+										</div>
+									);
+								})}
 						</div>
 					</section>
 

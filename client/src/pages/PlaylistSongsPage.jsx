@@ -38,6 +38,8 @@ export default function PlaylistSongsPage() {
                       }))
                     : [];
                 setSongs(songsArray);
+                console.log("playlist data:", data);
+console.log("image path:", data.playlistImage);
             } catch (err) {
                 console.error("Failed to fetch playlist", err);
             } finally {
@@ -112,9 +114,10 @@ export default function PlaylistSongsPage() {
                         <div className={`w-44 h-44 rounded-2xl bg-gradient-to-br ${fallbackGradient} flex items-center justify-center shadow-2xl shadow-violet-900/60 shrink-0 overflow-hidden`}>
                             {playlist?.playlistImage ? (
                                 <img
-                                    src={`http://localhost:4000${playlist.playlistImage}`}
+                                    src={playlist.playlistImage}
                                     alt={playlist?.name}
                                     className="w-full h-full object-cover"
+                                        onError={(e) => console.log("IMAGE FAILED TO LOAD:", e.target.src)}
                                 />
                             ) : (
                                 <Music2 size={64} className="text-white/50" />

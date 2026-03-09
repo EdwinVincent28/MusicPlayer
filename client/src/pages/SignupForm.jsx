@@ -46,7 +46,7 @@ export function SignupForm() {
 
 		try {
 			const response = await axios.post(
-				"http://localhost:4000/api/public/signup",
+				"/api/public/signup",
 				formData,
 			);
 
