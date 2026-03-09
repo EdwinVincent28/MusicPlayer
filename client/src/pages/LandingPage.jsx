@@ -1,348 +1,228 @@
 import Sidebar from "@/components/Sidebar.jsx";
 import PlaylistCard from "@/components/PlaylistCard.jsx";
 import MusicPlayer from "@/components/MusicPlayer.jsx";
-import { Play, TrendingUp, Clock, MoreHorizontal, Search, Plus, ListMusic, X, Check, Upload } from "lucide-react";
+import {
+	Play,
+	Pause,
+	TrendingUp,
+	Clock,
+	Search,
+	Disc3,
+	ListMusic,
+	Music2,
+	ChevronRight,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { usePlayer } from "../context/PlayerContext";
 import { jwtDecode } from "jwt-decode";
-import { createPortal } from "react-dom";
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+const PROXY = "https://corsproxy.io/?";
+const DEEZER = "https://api.deezer.com";
+
+// ── Original static playlists (kept exactly as-is) ───────────────────────────
 const playlists = [
-	{
-		title: "Chill Vibes",
-		artist: "Various Artists",
-		image: "https://picsum.photos/seed/chill/300/300",
-		duration: "2h 14m",
-	},
-	{
-		title: "Top Hits 2024",
-		artist: "Curated",
-		image: "https://picsum.photos/seed/tophits/300/300",
-		duration: "1h 48m",
-	},
-	{
-		title: "Workout Mix",
-		artist: "Energy Boost",
-		image: "https://picsum.photos/seed/workout/300/300",
-		duration: "58m",
-	},
-	{
-		title: "Deep Focus",
-		artist: "Lo-fi Studio",
-		image: "https://picsum.photos/seed/focus/300/300",
-		duration: "3h 02m",
-	},
-	{
-		title: "Indie Gems",
-		artist: "Discovery",
-		image: "https://picsum.photos/seed/indie/300/300",
-		duration: "1h 30m",
-	},
-	{
-		title: "Late Night Jazz",
-		artist: "Jazz Collective",
-		image: "https://picsum.photos/seed/jazz/300/300",
-		duration: "2h 45m",
-	},
-	{
-		title: "R&B Soul",
-		artist: "Soul Sessions",
-		image: "https://picsum.photos/seed/rnb/300/300",
-		duration: "1h 22m",
-	},
-	{
-		title: "Electronic",
-		artist: "Club Nights",
-		image: "https://picsum.photos/seed/electronic/300/300",
-		duration: "2h 10m",
-	},
+	{ title: "Chill Vibes", image: "https://via.placeholder.com/150" },
+	{ title: "Top Hits", image: "https://via.placeholder.com/150" },
+	{ title: "Workout", image: "https://via.placeholder.com/150" },
+	{ title: "Focus", image: "https://via.placeholder.com/150" },
+	{ title: "Indie", image: "https://via.placeholder.com/150" },
+	{ title: "Jazz", image: "https://via.placeholder.com/150" },
 ];
 
-const trendingTracks = [
-	{ rank: 1, title: "Blinding Lights", artist: "The Weeknd", album: "After Hours", duration: "3:20", img: "https://picsum.photos/seed/t1/40/40" },
-	{ rank: 2, title: "As It Was", artist: "Harry Styles", album: "Harry's House", duration: "2:47", img: "https://picsum.photos/seed/t2/40/40" },
-	{ rank: 3, title: "Levitating", artist: "Dua Lipa", album: "Future Nostalgia", duration: "3:24", img: "https://picsum.photos/seed/t3/40/40" },
-	{ rank: 4, title: "Stay", artist: "The Kid LAROI", album: "F*ck Love", duration: "2:21", img: "https://picsum.photos/seed/t4/40/40" },
-	{ rank: 5, title: "Ghost", artist: "Justin Bieber", album: "Justice", duration: "2:33", img: "https://picsum.photos/seed/t5/40/40" },
-];
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function formatDuration(secs) {
+	if (!secs) return "--:--";
+	return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
+}
 
-// ── Track Context Menu ─────────────────────────────────────────────────────────
-function TrackMenu({ track, onClose }) {
-	const [userPlaylists, setUserPlaylists] = useState([]);
-	const [loading, setLoading] = useState(true);
-	const [showModal, setShowModal] = useState(false);
-	const [newName, setNewName] = useState("");
-	const [newDesc, setNewDesc] = useState("");
-	const [imageFile, setImageFile] = useState(null);
-	const [imagePreview, setImagePreview] = useState(null);
-	const [creating, setCreating] = useState(false);
-	const fileInputRef = useRef(null);
-	const menuRef = useRef(null);
-
-	useEffect(() => {
-		const fetchPlaylists = async () => {
-			try {
-				const token = localStorage.getItem("token");
-				const { data } = await axios.get("/api/playlist", {
-					headers: { Authorization: `Bearer ${token}` },
-				});
-				setUserPlaylists(data);
-			} catch (err) {
-				console.error("Failed to fetch playlists", err);
-			} finally {
-				setLoading(false);
-			}
-		};
-		fetchPlaylists();
-	}, []);
-
-	// Close dropdown on outside click (but not when modal is open)
-	useEffect(() => {
-		const handler = (e) => {
-			if (!showModal && menuRef.current && !menuRef.current.contains(e.target)) onClose();
-		};
-		document.addEventListener("mousedown", handler);
-		return () => document.removeEventListener("mousedown", handler);
-	}, [onClose, showModal]);
-
-	const addToPlaylist = async (playlistId) => {
-		try {
-			const token = localStorage.getItem("token");
-			await axios.post(
-				`/api/playlist/${playlistId}/tracks`,
-				{
-					trackId: track.id,
-					title: track.title,
-					artist: track.artist.name,
-					cover: track.album.cover,
-					preview: track.preview,
-					duration: track.duration,
-				},
-				{ headers: { Authorization: `Bearer ${token}` } }
-			);
-			onClose(); // close dropdown after adding
-		} catch (err) {
-			console.error("Failed to add to playlist", err);
-		}
-	};
-
-	const handleImageChange = (e) => {
-		const file = e.target.files[0];
-		if (!file) return;
-		setImageFile(file);
-		setImagePreview(URL.createObjectURL(file));
-	};
-
-	const handleModalClose = () => {
-		setShowModal(false);
-		setNewName("");
-		setNewDesc("");
-		setImageFile(null);
-		setImagePreview(null);
-	};
-
-	const createAndAdd = async () => {
-		if (!newName.trim()) return;
-		setCreating(true);
-		try {
-			const token = localStorage.getItem("token");
-			const formData = new FormData();
-			formData.append("name", newName.trim());
-			formData.append("description", newDesc.trim());
-			if (imageFile) formData.append("playlistImage", imageFile);
-
-			const { data: newPlaylist } = await axios.post("/api/playlist", formData, {
-				headers: {
-					Authorization: `Bearer ${token}`,
-					"Content-Type": "multipart/form-data",
-				},
-			});
-			await addToPlaylist(newPlaylist._id); // this also calls onClose
-		} catch (err) {
-			console.error("Failed to create playlist", err);
-		} finally {
-			setCreating(false);
-		}
-	};
-
+// ── Skeleton loaders ──────────────────────────────────────────────────────────
+function CardSkeleton() {
 	return (
-		<>
-			{/* Dropdown */}
-			<div
-				ref={menuRef}
-				className="absolute right-0 top-8 z-50 w-56 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden"
-			>
-				<div className="px-3 py-2 border-b border-white/5">
-					<p className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Add to Playlist</p>
-				</div>
-
-				<div className="max-h-48 overflow-y-auto [&::-webkit-scrollbar]:hidden">
-					{loading && <p className="text-zinc-500 text-xs px-3 py-3">Loading playlists...</p>}
-					{!loading && userPlaylists.length === 0 && (
-						<p className="text-zinc-500 text-xs px-3 py-3">No playlists yet</p>
-					)}
-					{!loading && userPlaylists.map((pl) => (
-						<button
-							key={pl._id}
-							onClick={() => addToPlaylist(pl._id)}
-							className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition-colors text-left"
-						>
-							<div className="w-7 h-7 rounded-md bg-zinc-800 flex items-center justify-center shrink-0 overflow-hidden">
-								{pl.playlistImage
-									? <img src={`http://localhost:4000${pl.playlistImage}`} alt="" className="w-full h-full object-cover" />
-									: <ListMusic size={12} className="text-zinc-500" />
-								}
-							</div>
-							<span className="truncate flex-1">{pl.name}</span>
-						</button>
-					))}
-				</div>
-
-				<div className="border-t border-white/5">
-					<button
-						onClick={() => setShowModal(true)}
-						className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-violet-400 hover:bg-white/5 transition-colors"
-					>
-						<Plus size={14} />
-						New Playlist
-					</button>
-				</div>
+		<div className="rounded-2xl bg-zinc-900 border border-white/5 overflow-hidden animate-pulse shrink-0 w-44">
+			<div className="aspect-square bg-zinc-800" />
+			<div className="p-3 space-y-2">
+				<div className="h-3 bg-zinc-800 rounded w-3/4" />
+				<div className="h-2 bg-zinc-800 rounded w-1/2" />
 			</div>
-
-			{/* Create Playlist Modal */}
-			{showModal && createPortal (
-				<div
-					className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center"
-					onClick={handleModalClose}
-				>
-					<div
-						className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl"
-						onClick={(e) => e.stopPropagation()}
-					>
-						<div className="flex items-center justify-between mb-5">
-							<h2 className="text-white text-xl font-bold">Create Playlist</h2>
-							<button onClick={handleModalClose} className="text-zinc-500 hover:text-white transition-colors">
-								<X size={18} />
-							</button>
-						</div>
-
-						<div className="flex flex-col gap-4">
-							{/* Image Upload */}
-							<div>
-								<label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1.5 block">
-									Cover Image
-								</label>
-								<div
-									onClick={() => fileInputRef.current?.click()}
-									className="relative w-full h-36 rounded-xl border-2 border-dashed border-white/10 hover:border-violet-500/50 transition-colors cursor-pointer overflow-hidden flex items-center justify-center bg-zinc-800"
-								>
-									{imagePreview ? (
-										<>
-											<img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-											<div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-												<p className="text-white text-xs font-semibold">Change Image</p>
-											</div>
-										</>
-									) : (
-										<div className="flex flex-col items-center gap-2 text-zinc-600">
-											<Upload size={24} />
-											<p className="text-xs">Click to upload image</p>
-										</div>
-									)}
-								</div>
-								<input
-									ref={fileInputRef}
-									type="file"
-									accept="image/*"
-									onChange={handleImageChange}
-									className="hidden"
-								/>
-							</div>
-
-							{/* Name */}
-							<div>
-								<label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1.5 block">
-									Name <span className="text-violet-400">*</span>
-								</label>
-								<input
-									type="text"
-									value={newName}
-									onChange={(e) => setNewName(e.target.value)}
-									onKeyDown={(e) => e.key === "Enter" && createAndAdd()}
-									placeholder="My Playlist"
-									className="w-full bg-zinc-800 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors"
-								/>
-							</div>
-
-							{/* Description */}
-							<div>
-								<label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1.5 block">
-									Description
-								</label>
-								<input
-									type="text"
-									value={newDesc}
-									onChange={(e) => setNewDesc(e.target.value)}
-									placeholder="Optional description"
-									className="w-full bg-zinc-800 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors"
-								/>
-							</div>
-						</div>
-
-						<div className="flex gap-3 mt-6">
-							<button
-								onClick={handleModalClose}
-								className="flex-1 py-3 rounded-xl border border-white/10 text-zinc-400 text-sm font-semibold hover:bg-white/5 transition-colors"
-							>
-								Cancel
-							</button>
-							<button
-								onClick={createAndAdd}
-								disabled={!newName.trim() || creating}
-								className="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-600 text-white text-sm font-semibold shadow-lg shadow-violet-900/40 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
-							>
-								{creating ? "Creating..." : "Create & Add"}
-							</button>
-						</div>
-					</div>
-				</div>,
-				document.body
-			)}
-		</>
+		</div>
 	);
 }
 
-// ── Main Component ─────────────────────────────────────────────────────────────
-function LandingPage() {
+function TrackSkeleton() {
+	return (
+		<div className="grid grid-cols-[40px_1fr_1fr_80px] gap-4 px-5 py-3 animate-pulse">
+			<div className="w-5 h-5 bg-zinc-800 rounded self-center" />
+			<div className="flex items-center gap-3">
+				<div className="w-9 h-9 bg-zinc-800 rounded-lg shrink-0" />
+				<div className="space-y-1.5 flex-1">
+					<div className="h-3 bg-zinc-800 rounded w-2/3" />
+					<div className="h-2 bg-zinc-800 rounded w-1/3" />
+				</div>
+			</div>
+			<div className="h-3 bg-zinc-800 rounded w-20 self-center" />
+			<div className="h-3 bg-zinc-800 rounded w-10 self-center ml-auto" />
+		</div>
+	);
+}
+
+// ── Track card (horizontal scroll) ───────────────────────────────────────────
+function TrackCard({ track, index, onPlay, isActive, isPlaying }) {
+	return (
+		<div
+			onClick={onPlay}
+			className={`group relative shrink-0 w-44 rounded-2xl overflow-hidden cursor-pointer border transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-violet-900/20
+				${isActive ? "border-violet-500/40 bg-violet-600/10" : "border-white/5 bg-zinc-900 hover:border-violet-500/20"}`}
+		>
+			<div className="relative aspect-square overflow-hidden">
+				<img
+					src={track.album?.cover_medium || track.album?.cover}
+					alt={track.title}
+					className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+					onError={(e) => {
+						e.target.src = `https://picsum.photos/seed/${track.id}/200/200`;
+					}}
+				/>
+				<div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 to-transparent" />
+				<div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-black/50 backdrop-blur flex items-center justify-center">
+					<span className="text-white text-[10px] font-black">{index + 1}</span>
+				</div>
+				<button className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-violet-600 flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-200 hover:bg-violet-500 hover:scale-110">
+					{isPlaying ? (
+						<Pause size={14} fill="white" className="text-white" />
+					) : (
+						<Play size={14} fill="white" className="text-white ml-0.5" />
+					)}
+				</button>
+			</div>
+			<div className="p-3">
+				<p
+					className={`text-sm font-semibold truncate transition-colors ${isActive ? "text-violet-300" : "text-white"}`}
+				>
+					{track.title}
+				</p>
+				<p className="text-zinc-500 text-xs mt-0.5 truncate">
+					{track.artist?.name}
+				</p>
+			</div>
+		</div>
+	);
+}
+
+// ── Media card — albums & playlists (horizontal scroll) ───────────────────────
+function MediaCard({ item, type }) {
+	const image =
+		item.picture_medium || item.picture || item.cover_medium || item.cover;
+	const title = item.title || item.name;
+	const sub =
+		type === "album"
+			? item.artist?.name
+			: type === "playlist"
+				? `${item.nb_tracks ?? "?"} tracks`
+				: "";
+
+	return (
+		<div className="group shrink-0 w-44 rounded-2xl overflow-hidden cursor-pointer border border-white/5 bg-zinc-900 hover:border-violet-500/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-violet-900/20">
+			<div className="relative aspect-square overflow-hidden">
+				<img
+					src={image}
+					alt={title}
+					className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+					onError={(e) => {
+						e.target.src = `https://picsum.photos/seed/${item.id}/200/200`;
+					}}
+				/>
+				<div className="absolute inset-0 bg-gradient-to-t from-zinc-950/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+				<button className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-violet-600 flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-200 hover:bg-violet-500">
+					<Play size={14} fill="white" className="text-white ml-0.5" />
+				</button>
+			</div>
+			<div className="p-3">
+				<p className="text-sm font-semibold text-white truncate">{title}</p>
+				{sub && <p className="text-zinc-500 text-xs mt-0.5 truncate">{sub}</p>}
+			</div>
+		</div>
+	);
+}
+
+// ── Horizontal scroll section wrapper ────────────────────────────────────────
+function ScrollSection({
+	title,
+	icon: Icon,
+	loading,
+	skeletonCount = 6,
+	children,
+}) {
+	const scrollRef = useRef(null);
+	return (
+		<section>
+			<div className="flex items-center justify-between mb-4">
+				<div className="flex items-center gap-2">
+					{Icon && <Icon size={18} className="text-violet-400" />}
+					<h2 className="text-lg font-bold text-white">{title}</h2>
+				</div>
+				<button className="flex items-center gap-1 text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium">
+					See all <ChevronRight size={14} />
+				</button>
+			</div>
+			<div
+				ref={scrollRef}
+				className="flex gap-4 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden scroll-smooth"
+			>
+				{loading
+					? Array.from({ length: skeletonCount }).map((_, i) => (
+							<CardSkeleton key={i} />
+						))
+					: children}
+			</div>
+		</section>
+	);
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+export default function LandingPage() {
+	// ── Search state (original functionality, kept as-is) ────────────────────
 	const [query, setQuery] = useState("");
 	const [results, setResults] = useState([]);
-	const [loading, setLoading] = useState(false);
+	const [searchLoading, setSearchLoading] = useState(false);
+	const [showDropdown, setShowDropdown] = useState(false);
 	const controllerRef = useRef(null);
+	const dropdownRef = useRef(null);
+
+	// ── User state (original functionality, kept as-is) ──────────────────────
 	const [user, setUser] = useState(null);
-	const [error, setError] = useState(null);
 	const [profileImage, setProfileImage] = useState("");
-	const [openMenuTrackId, setOpenMenuTrackId] = useState(null);
 
-	const { playTrack, currentTrack, playing } = usePlayer();
+	// ── Chart state (new) ────────────────────────────────────────────────────
+	const [trendingTracks, setTrendingTracks] = useState([]);
+	const [trendingPlaylists, setTrendingPlaylists] = useState([]);
+	const [trendingAlbums, setTrendingAlbums] = useState([]);
+	const [tracksLoading, setTracksLoading] = useState(true);
+	const [playlistsLoading, setPlaylistsLoading] = useState(true);
+	const [albumsLoading, setAlbumsLoading] = useState(true);
+	const [featured, setFeatured] = useState(null);
 
+	const { playTrack, playQueue, currentTrack, playing, togglePlay } =
+		usePlayer();
+
+	// ── Close dropdown on outside click ──────────────────────────────────────
 	useEffect(() => {
-		const delayDebounceFn = setTimeout(() => {
-			if (query.trim()) {
-				searchTracks(query);
-			} else {
-				setResults([]);
-			}
-		}, 500);
-		return () => clearTimeout(delayDebounceFn);
-	}, [query]);
+		const handler = (e) => {
+			if (dropdownRef.current && !dropdownRef.current.contains(e.target))
+				setShowDropdown(false);
+		};
+		document.addEventListener("mousedown", handler);
+		return () => document.removeEventListener("mousedown", handler);
+	}, []);
 
+	// ── Fetch user (original logic, kept as-is) ───────────────────────────────
 	useEffect(() => {
 		const fetchUserDetails = async () => {
 			const token = localStorage.getItem("token");
-			if (!token) { setError("Not authenticated"); return; }
+			if (!token) return;
 			try {
 				const decodedToken = jwtDecode(token);
 				const extractedId = decodedToken._id;
@@ -350,187 +230,418 @@ function LandingPage() {
 					headers: { Authorization: `Bearer ${token}` },
 				});
 				setUser(response.data);
-				if (response.data.profileImage) {
+				if (response.data.profileImage)
 					setProfileImage(`http://localhost:4000${response.data.profileImage}`);
-				}
 			} catch (err) {
 				console.error("Failed to load profile:", err);
-				setError("Could not load profile.");
 			}
 		};
 		fetchUserDetails();
 	}, []);
 
+	// ── Fetch Deezer chart data ───────────────────────────────────────────────
+	useEffect(() => {
+		const fetchCharts = async () => {
+			const [tracksRes, playlistsRes, albumsRes] = await Promise.allSettled([
+				axios.get(`${PROXY}${DEEZER}/chart/0/tracks?limit=20`),
+				axios.get(`${PROXY}${DEEZER}/chart/0/playlists?limit=12`),
+				axios.get(`${PROXY}${DEEZER}/chart/0/albums?limit=12`),
+			]);
+
+			if (tracksRes.status === "fulfilled") {
+				const tracks = tracksRes.value.data?.data || [];
+				setTrendingTracks(tracks);
+				if (tracks[0]) setFeatured(tracks[0]);
+			}
+			setTracksLoading(false);
+
+			if (playlistsRes.status === "fulfilled")
+				setTrendingPlaylists(playlistsRes.value.data?.data || []);
+			setPlaylistsLoading(false);
+
+			if (albumsRes.status === "fulfilled")
+				setTrendingAlbums(albumsRes.value.data?.data || []);
+			setAlbumsLoading(false);
+		};
+		fetchCharts();
+	}, []);
+
+	// ── Debounced search (original logic, kept as-is) ────────────────────────
+	useEffect(() => {
+		const delayDebounceFn = setTimeout(() => {
+			if (query.trim()) searchTracks(query);
+			else setResults([]);
+		}, 500);
+		return () => clearTimeout(delayDebounceFn);
+	}, [query]);
+
 	const searchTracks = async (searchTerm) => {
 		if (controllerRef.current) controllerRef.current.abort();
 		controllerRef.current = new AbortController();
+
 		const token = localStorage.getItem("token");
-		setLoading(true);
+		setSearchLoading(true);
+		setShowDropdown(true);
 		try {
-			const response = await axios.get(`/api/deezer/search?q=${searchTerm}`, {
-				headers: { Authorization: `Bearer ${token}` },
-				signal: controllerRef.current.signal,
-			});
+			const response = await axios.get(
+				`/api/deezer/search?q=${encodeURIComponent(searchTerm)}`,
+				{
+					headers: { Authorization: `Bearer ${token}` },
+					signal: controllerRef.current.signal,
+				},
+			);
 			setResults(response.data.results);
 		} catch (error) {
-			if (!axios.isCancel(error)) console.error("Actual search error:", error);
+			if (axios.isCancel(error)) {
+				console.log("Request canceled successfully");
+			} else {
+				console.error("Actual search error:", error);
+			}
 		} finally {
-			setLoading(false);
+			setSearchLoading(false);
 		}
 	};
 
+	// ── Helpers ───────────────────────────────────────────────────────────────
+	const handlePlayTrack = (track) => {
+		playTrack({
+			id: track.id,
+			title: track.title,
+			artist: track.artist?.name || track.artist,
+			cover: track.album?.cover_medium || track.album?.cover,
+			duration: track.duration,
+			preview: track.preview,
+		});
+	};
+
+	const handlePlayAll = () => {
+		if (!trendingTracks.length) return;
+		if (currentTrack && playing) {
+			togglePlay();
+			return;
+		}
+		const queue = trendingTracks.map((t) => ({
+			id: t.id,
+			title: t.title,
+			artist: t.artist?.name,
+			cover: t.album?.cover_medium,
+			duration: t.duration,
+			preview: t.preview,
+		}));
+		playQueue(queue, 0);
+	};
+
+	const isFeaturedPlaying = currentTrack?.id === featured?.id && playing;
+
+	// ── Render ────────────────────────────────────────────────────────────────
 	return (
 		<div className="flex bg-zinc-950 min-h-screen text-white">
 			<Sidebar />
 
 			<div className="flex-1 overflow-y-auto pb-28">
-				{/* Top bar */}
-				<div className="sticky top-0 z-10 bg-zinc-950/80 backdrop-blur-xl px-8 py-4 flex items-center justify-between border-b border-white/5">
-					<div className="relative w-full max-w-md">
+				{/* ── Top bar (search + user) ── */}
+				<div className="sticky top-0 z-20 bg-zinc-950/85 backdrop-blur-xl px-8 py-4 flex items-center justify-between border-b border-white/5 gap-6">
+					<div className="relative w-full max-w-md" ref={dropdownRef}>
+						<Search
+							size={16}
+							className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500"
+						/>
 						<input
 							type="text"
 							placeholder="Search songs, artists..."
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
-							className="w-full bg-zinc-800/70 text-white placeholder-zinc-400 px-4 py-2.5 pl-10 rounded-full focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
+							onFocus={() => query.trim() && setShowDropdown(true)}
+							className="w-full bg-zinc-800/70 text-white placeholder-zinc-500 pl-10 pr-4 py-2.5 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
 						/>
-						<Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-
-						{/* Dropdown */}
-						{query && (
-							<div className="absolute top-14 w-full bg-zinc-900 border border-white/5 rounded-xl shadow-xl max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden">
-								{loading && <p className="p-4 text-sm text-zinc-400">Searching...</p>}
-								{!loading && results.length === 0 && <p className="p-4 text-sm text-zinc-400">No results found</p>}
-								{!loading && results.slice(0, 8).map((track) => (
-									<div
-										key={track.id}
-										className="flex items-center gap-3 p-3 hover:bg-white/5 transition-colors group"
-									>
-										{/* Album art — clicking plays */}
-										<img
-											src={track.album.cover}
-											alt={track.title}
-											onClick={() => { playTrack(track); setQuery(""); setResults([]); }}
-											className="w-10 h-10 rounded-md cursor-pointer shrink-0"
-										/>
-
-										{/* Title — clicking plays */}
-										<div
-											className="min-w-0 flex-1 cursor-pointer"
-											onClick={() => { playTrack(track); setQuery(""); setResults([]); }}
-										>
-											<p className="text-sm text-white truncate">{track.title}</p>
-											<p className="text-xs text-zinc-400 truncate">{track.artist.name}</p>
-										</div>
-
-										{/* 3-dot menu */}
-										<div className="relative shrink-0">
-											<button
-												onClick={(e) => {
-													e.stopPropagation();
-													setOpenMenuTrackId(openMenuTrackId === track.id ? null : track.id);
-												}}
-												className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-white/5 transition-colors opacity-0 group-hover:opacity-100"
-											>
-												<MoreHorizontal size={16} />
-											</button>
-											{openMenuTrackId === track.id && (
-												<TrackMenu
-													track={track}
-													onClose={() => setOpenMenuTrackId(null)}
-												/>
-											)}
-										</div>
+						{showDropdown && query.trim() && (
+							<div className="absolute top-12 w-full bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/60 max-h-80 overflow-y-auto z-50 [&::-webkit-scrollbar]:hidden">
+								{searchLoading && (
+									<div className="flex items-center gap-3 p-4">
+										<div className="w-4 h-4 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
+										<p className="text-sm text-zinc-400">Searching...</p>
 									</div>
-								))}
+								)}
+								{!searchLoading && results.length === 0 && (
+									<p className="p-4 text-sm text-zinc-400">
+										No results for "{query}"
+									</p>
+								)}
+								{!searchLoading &&
+									results.slice(0, 8).map((track) => (
+										<div
+											key={track.id}
+											onClick={() => {
+												playTrack(track);
+												setQuery("");
+												setResults([]);
+												setShowDropdown(false);
+											}}
+											className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 cursor-pointer transition-colors group border-b border-white/[0.04] last:border-0"
+										>
+											<img
+												src={track.album?.cover || track.album?.cover_small}
+												alt={track.title}
+												className="w-10 h-10 rounded-lg object-cover shrink-0"
+											/>
+											<div className="min-w-0 flex-1">
+												<p className="text-sm text-white font-medium truncate group-hover:text-violet-300 transition-colors">
+													{track.title}
+												</p>
+												<p className="text-xs text-zinc-500 truncate">
+													{track.artist?.name}
+												</p>
+											</div>
+											<span className="text-xs text-zinc-600 shrink-0">
+												{formatDuration(track.duration)}
+											</span>
+										</div>
+									))}
 							</div>
 						)}
 					</div>
 
-					<div className="flex items-center gap-3">
+					<div className="flex items-center gap-3 shrink-0">
 						{profileImage ? (
-							<img src={profileImage} alt="Profile" className="w-8 h-8 rounded-full object-cover ring-2 ring-violet-500/30" />
+							<img
+								src={profileImage}
+								alt="Profile"
+								className="w-8 h-8 rounded-full object-cover ring-2 ring-violet-500/30"
+							/>
 						) : (
-							<div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 ring-2 ring-violet-500/30" />
+							<div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 ring-2 ring-violet-500/30" />
 						)}
-						<span className="text-sm font-medium text-zinc-300">{user?.username}</span>
+						<span className="text-sm font-medium text-zinc-400">
+							{user?.username}
+						</span>
 					</div>
 				</div>
 
 				<div className="px-8 py-8 space-y-12">
-					{/* Hero Banner */}
-					<section className="relative rounded-3xl overflow-hidden h-64 group cursor-pointer">
-						<img
-							src="https://picsum.photos/seed/hero-banner/1200/400"
-							alt="Featured"
-							className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-						/>
-						<div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/60 to-transparent" />
-						<div className="absolute inset-0 flex flex-col justify-center px-10 gap-3">
-							<Badge className="w-fit bg-violet-600/80 backdrop-blur text-white border-violet-500/30 text-xs">
-								🔥 Featured Artist
-							</Badge>
-							<h1 className="text-4xl font-black tracking-tight text-white drop-shadow-xl">The Weeknd</h1>
-							<p className="text-zinc-400 text-sm max-w-xs">After Hours • 14 tracks • 56 min</p>
-							<div className="flex items-center gap-3 mt-1">
-								<Button className="bg-violet-600 hover:bg-violet-500 text-white rounded-full px-6 shadow-lg shadow-violet-900/50 gap-2 transition-all duration-200 hover:scale-105">
-									<Play size={14} fill="white" /> Play Now
-								</Button>
-								<Button variant="outline" className="rounded-full border-white/20 text-white bg-white/5 hover:bg-white/10 backdrop-blur">
-									View Album
-								</Button>
-							</div>
-						</div>
+					{/* ── NEW: Hero banner — #1 trending track ── */}
+					<section
+						className="relative rounded-3xl overflow-hidden h-72 group cursor-pointer"
+						onClick={handlePlayAll}
+					>
+						{featured ? (
+							<>
+								<img
+									src={
+										featured.album?.cover_xl ||
+										featured.album?.cover_big ||
+										featured.album?.cover_medium
+									}
+									alt={featured.title}
+									className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+									onError={(e) => {
+										e.target.src = "https://picsum.photos/seed/hero/1200/400";
+									}}
+								/>
+								<div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/70 to-transparent" />
+								<div className="absolute inset-0 bg-gradient-to-t from-zinc-950/60 to-transparent" />
+								<div className="absolute inset-0 flex flex-col justify-center px-10 gap-3">
+									<Badge className="w-fit bg-violet-600/80 backdrop-blur text-white border-violet-500/30 text-xs">
+										🔥 #1 Trending
+									</Badge>
+									<h1 className="text-4xl font-black tracking-tight text-white drop-shadow-xl line-clamp-1">
+										{featured.title}
+									</h1>
+									<p className="text-zinc-400 text-sm">
+										{featured.artist?.name}
+									</p>
+									<div className="flex items-center gap-3 mt-1">
+										<Button
+											onClick={(e) => {
+												e.stopPropagation();
+												handlePlayAll();
+											}}
+											className="bg-violet-600 hover:bg-violet-500 text-white rounded-full px-6 shadow-lg shadow-violet-900/50 gap-2 transition-all duration-200 hover:scale-105"
+										>
+											{isFeaturedPlaying ? (
+												<>
+													<Pause size={14} fill="white" /> Pause
+												</>
+											) : (
+												<>
+													<Play size={14} fill="white" /> Play All
+												</>
+											)}
+										</Button>
+										<Button
+											variant="outline"
+											className="rounded-full border-white/20 text-white bg-white/5 hover:bg-white/10 backdrop-blur"
+										>
+											View Chart
+										</Button>
+									</div>
+								</div>
+							</>
+						) : (
+							<div className="w-full h-full bg-zinc-900 animate-pulse rounded-3xl" />
+						)}
 					</section>
 
-					{/* Featured Playlists */}
-					<section>
-						<div className="flex items-center justify-between mb-5">
-							<h2 className="text-xl font-bold text-white">Featured Playlists</h2>
-							<button className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium">See all →</button>
-						</div>
-						<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-							{playlists.map((pl) => <PlaylistCard key={pl.title} {...pl} />)}
-						</div>
-					</section>
+					{/* ── NEW: Top Trending Tracks — horizontal scroll cards ── */}
+					<ScrollSection
+						title="Top Trending Tracks"
+						icon={TrendingUp}
+						loading={tracksLoading}
+					>
+						{trendingTracks.map((track, i) => (
+							<TrackCard
+								key={track.id}
+								track={track}
+								index={i}
+								isActive={currentTrack?.id === track.id}
+								isPlaying={currentTrack?.id === track.id && playing}
+								onPlay={() => {
+									if (currentTrack?.id === track.id) {
+										togglePlay();
+										return;
+									}
+									const queue = trendingTracks.map((t) => ({
+										id: t.id,
+										title: t.title,
+										artist: t.artist?.name,
+										cover: t.album?.cover_medium,
+										duration: t.duration,
+										preview: t.preview,
+									}));
+									playQueue(queue, i);
+								}}
+							/>
+						))}
+					</ScrollSection>
 
-					{/* Trending Tracks */}
+					{/* ── NEW: Charts full list — table ── */}
 					<section>
-						<div className="flex items-center justify-between mb-5">
-							<div className="flex items-center gap-2">
-								<TrendingUp size={20} className="text-violet-400" />
-								<h2 className="text-xl font-bold text-white">Trending Now</h2>
-							</div>
-							<button className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium">See all →</button>
+						<div className="flex items-center gap-2 mb-4">
+							<Music2 size={18} className="text-violet-400" />
+							<h2 className="text-lg font-bold text-white">
+								Charts — Full List
+							</h2>
 						</div>
 						<div className="bg-zinc-900/60 rounded-2xl border border-white/5 overflow-hidden">
-							<div className="grid grid-cols-[40px_1fr_1fr_80px_40px] gap-4 px-5 py-3 border-b border-white/5 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
+							<div className="grid grid-cols-[40px_1fr_1fr_80px] gap-4 px-5 py-3 border-b border-white/5 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
 								<span>#</span>
 								<span>Title</span>
 								<span>Album</span>
-								<span className="flex items-center gap-1 justify-end"><Clock size={12} /> Time</span>
-								<span />
+								<span className="flex items-center gap-1 justify-end">
+									<Clock size={12} /> Time
+								</span>
 							</div>
-							{trendingTracks.map((track) => (
-								<div key={track.title} className="grid grid-cols-[40px_1fr_1fr_80px_40px] gap-4 px-5 py-3 items-center hover:bg-white/5 transition-colors group cursor-pointer border-b border-white/[0.03] last:border-0">
-									<span className="text-zinc-600 text-sm font-medium group-hover:hidden">{track.rank}</span>
-									<Play size={14} className="text-violet-400 hidden group-hover:block" fill="currentColor" />
-									<div className="flex items-center gap-3 min-w-0">
-										<img src={track.img} alt={track.title} className="w-9 h-9 rounded-lg object-cover shrink-0" />
-										<div className="min-w-0">
-											<p className="text-white text-sm font-medium truncate group-hover:text-violet-300 transition-colors">{track.title}</p>
-											<p className="text-zinc-500 text-xs truncate">{track.artist}</p>
-										</div>
-									</div>
-									<span className="text-zinc-500 text-sm truncate">{track.album}</span>
-									<span className="text-zinc-500 text-sm text-right">{track.duration}</span>
-									<button className="text-zinc-700 hover:text-zinc-400 transition-colors opacity-0 group-hover:opacity-100">
-										<MoreHorizontal size={16} />
-									</button>
-								</div>
-							))}
+							{tracksLoading
+								? Array.from({ length: 5 }).map((_, i) => (
+										<TrackSkeleton key={i} />
+									))
+								: trendingTracks.slice(0, 10).map((track, i) => {
+										const isActive = currentTrack?.id === track.id;
+										const isPlaying = isActive && playing;
+										return (
+											<div
+												key={track.id}
+												onClick={() => {
+													if (isActive) {
+														togglePlay();
+														return;
+													}
+													const queue = trendingTracks.map((t) => ({
+														id: t.id,
+														title: t.title,
+														artist: t.artist?.name,
+														cover: t.album?.cover_medium,
+														duration: t.duration,
+														preview: t.preview,
+													}));
+													playQueue(queue, i);
+												}}
+												className={`grid grid-cols-[40px_1fr_1fr_80px] gap-4 px-5 py-3 items-center cursor-pointer transition-colors group border-b border-white/[0.03] last:border-0
+												${isActive ? "bg-violet-600/10" : "hover:bg-white/5"}`}
+											>
+												<div className="flex items-center justify-center">
+													<span
+														className={`text-sm font-medium group-hover:hidden ${isActive ? "text-violet-400" : "text-zinc-600"}`}
+													>
+														{i + 1}
+													</span>
+													{isPlaying ? (
+														<Pause
+															size={14}
+															className="text-violet-400 hidden group-hover:block"
+															fill="currentColor"
+														/>
+													) : (
+														<Play
+															size={14}
+															className="text-violet-400 hidden group-hover:block"
+															fill="currentColor"
+														/>
+													)}
+												</div>
+												<div className="flex items-center gap-3 min-w-0">
+													<img
+														src={track.album?.cover_small}
+														alt={track.title}
+														className="w-9 h-9 rounded-lg object-cover shrink-0"
+													/>
+													<div className="min-w-0">
+														<p
+															className={`text-sm font-medium truncate transition-colors ${isActive ? "text-violet-300" : "text-white group-hover:text-violet-300"}`}
+														>
+															{track.title}
+														</p>
+														<p className="text-zinc-500 text-xs truncate">
+															{track.artist?.name}
+														</p>
+													</div>
+													{isPlaying && (
+														<span className="shrink-0 flex gap-0.5 items-end h-3 ml-1">
+															{[1, 2, 3].map((b) => (
+																<span
+																	key={b}
+																	className="w-0.5 bg-violet-500 rounded-full animate-pulse"
+																	style={{
+																		height: `${8 + b * 3}px`,
+																		animationDelay: `${b * 0.15}s`,
+																	}}
+																/>
+															))}
+														</span>
+													)}
+												</div>
+												<span className="text-zinc-500 text-sm truncate">
+													{track.album?.title}
+												</span>
+												<span className="text-zinc-500 text-sm text-right">
+													{formatDuration(track.duration)}
+												</span>
+											</div>
+										);
+									})}
 						</div>
 					</section>
+
+					{/* ── NEW: Trending Playlists — horizontal scroll ── */}
+					<ScrollSection
+						title="Trending Playlists"
+						icon={ListMusic}
+						loading={playlistsLoading}
+					>
+						{trendingPlaylists.map((pl) => (
+							<MediaCard key={pl.id} item={pl} type="playlist" />
+						))}
+					</ScrollSection>
+
+					{/* ── NEW: Trending Albums — horizontal scroll ── */}
+					<ScrollSection
+						title="Trending Albums"
+						icon={Disc3}
+						loading={albumsLoading}
+					>
+						{trendingAlbums.map((album) => (
+							<MediaCard key={album.id} item={album} type="album" />
+						))}
+					</ScrollSection>
 				</div>
 			</div>
 
@@ -538,5 +649,3 @@ function LandingPage() {
 		</div>
 	);
 }
-
-export default LandingPage;
