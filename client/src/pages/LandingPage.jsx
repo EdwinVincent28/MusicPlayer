@@ -22,27 +22,14 @@ import { jwtDecode } from "jwt-decode";
 
 import TrackMenu from "@/components/TrackMenu";
 
-// ── Constants ─────────────────────────────────────────────────────────────────
 const PROXY = "https://corsproxy.io/?";
 const DEEZER = "https://api.deezer.com";
 
-// ── Original static playlists (kept exactly as-is) ───────────────────────────
-const playlists = [
-	{ title: "Chill Vibes", image: "https://via.placeholder.com/150" },
-	{ title: "Top Hits", image: "https://via.placeholder.com/150" },
-	{ title: "Workout", image: "https://via.placeholder.com/150" },
-	{ title: "Focus", image: "https://via.placeholder.com/150" },
-	{ title: "Indie", image: "https://via.placeholder.com/150" },
-	{ title: "Jazz", image: "https://via.placeholder.com/150" },
-];
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function formatDuration(secs) {
 	if (!secs) return "--:--";
 	return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
 }
 
-// ── Skeleton loaders ──────────────────────────────────────────────────────────
 function CardSkeleton() {
 	return (
 		<div className="rounded-2xl bg-zinc-900 border border-white/5 overflow-hidden animate-pulse shrink-0 w-44">

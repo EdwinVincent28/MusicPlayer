@@ -1,7 +1,7 @@
 import Sidebar from "@/components/Sidebar.jsx";
 import MusicPlayer from "@/components/MusicPlayer.jsx";
-import { Play, Shuffle, Clock, Pause, Music2, Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Play, Shuffle, Clock, Pause, Music2, Trash2, CheckCircle, AlertCircle  } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { usePlayer } from "../context/PlayerContext";
 import { useParams, useNavigate } from "react-router-dom";
@@ -20,6 +20,15 @@ export default function PlaylistSongsPage() {
     const [songs, setSongs] = useState([]);
     const [loading, setLoading] = useState(true);
     const { playTrack, currentTrack, playing, playQueue } = usePlayer();
+
+    const [toast, setToast] = useState(null);
+    const toastTimer = useRef(null);
+
+    const showToast = (message, type = "success") => {
+        setToast({ message, type });
+        clearTimeout(toastTimer.current);
+        toastTimer.current = setTimeout(() => setToast(null), 3000);
+    };
 
     useEffect(() => {
         const fetchPlaylist = async () => {
@@ -57,8 +66,10 @@ console.log("image path:", data.playlistImage);
                 data: { trackId },
             });
             setSongs((prev) => prev.filter((s) => s.id !== trackId));
+            showToast("Song removed from playlist");
         } catch (err) {
             console.error("Failed to remove song", err);
+            showToast("Failed to remove song", "error");
         }
     };
 
@@ -84,6 +95,21 @@ console.log("image path:", data.playlistImage);
 
     return (
         <div className="flex bg-zinc-950 min-h-screen text-white">
+            {toast && (  
+                <div className={`fixed bottom-32 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium shadow-2xl border backdrop-blur-sm
+                    ${toast.type === "error"
+                        ? "bg-red-500/10 border-red-500/20 text-red-400"
+                        : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                    }`}
+                >
+                    {toast.type === "error"
+                        ? <AlertCircle size={15} className="shrink-0" />
+                        : <CheckCircle size={15} className="shrink-0" />
+                    }
+                    {toast.message}
+                </div>
+            )}
+
             <Sidebar />
 
             <div className="flex-1 overflow-y-auto pb-28">

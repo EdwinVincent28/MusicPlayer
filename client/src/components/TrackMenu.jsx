@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { createPortal } from "react-dom";
-import { Plus, ListMusic, X, Upload } from "lucide-react";
+import { Plus, ListMusic, X, Upload, AlertCircle, CheckCircle } from "lucide-react";
 
 export default function TrackMenu({ trackData, onClose }) {
     const [userPlaylists, setUserPlaylists] = useState([]);
@@ -15,6 +15,8 @@ export default function TrackMenu({ trackData, onClose }) {
     const [openUpward, setOpenUpward] = useState(false);
     const fileInputRef = useRef(null);
     const menuRef = useRef(null);
+    const [toast, setToast] = useState(null);
+    const toastTimer = useRef(null);
 
     useEffect(() => {
         const fetchPlaylists = async () => {
@@ -52,6 +54,16 @@ export default function TrackMenu({ trackData, onClose }) {
         return () => document.removeEventListener("mousedown", handler);
     }, [onClose, showModal]);
 
+    useEffect(() => {
+        return () => clearTimeout(toastTimer.current);
+    }, []);
+
+    const showToast = (message, type = "error") => {
+        setToast({ message, type });
+        clearTimeout(toastTimer.current);
+        toastTimer.current = setTimeout(() => setToast(null), 3000);
+    };
+
     const addToPlaylist = async (playlistId) => {
         try {
             const token = localStorage.getItem("token");
@@ -67,9 +79,16 @@ export default function TrackMenu({ trackData, onClose }) {
                 },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            onClose();
-        } catch (err) {
-            console.error("Failed to add to playlist", err);
+            showToast("Song added to playlist", "success");
+            setTimeout(() => onClose(), 1500); 
+            // onClose();
+        }catch (err) {
+            const message = err.response?.data?.error;
+            if (message === "Track already in playlist") {
+                showToast("This song is already in the playlist");
+            } else {
+                showToast("Failed to add to playlist");
+            }
         }
     };
 
@@ -101,8 +120,11 @@ export default function TrackMenu({ trackData, onClose }) {
                 headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
             });
             await addToPlaylist(newPlaylist._id);
+            handleModalClose();
+            showToast("New playlist created and song added!", "success");
+            setTimeout(() => onClose(), 1500);
         } catch (err) {
-            console.error("Failed to create playlist", err);
+            showToast("Playlist could not be created");
         } finally {
             setCreating(false);
         }
@@ -116,6 +138,22 @@ export default function TrackMenu({ trackData, onClose }) {
                 className={`absolute right-0 z-50 w-56 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden
                     ${openUpward ? "bottom-8" : "top-8"}`}
             >
+
+            {toast && (
+                <div className={`flex items-center gap-2 px-3 py-2.5 text-xs font-medium border-b
+                    ${toast.type === "error"
+                        ? "bg-red-500/10 border-red-500/20 text-red-400"
+                        : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                    }`}
+                >
+                    {toast.type === "error"
+                        ? <AlertCircle size={13} className="shrink-0" />
+                        : <CheckCircle size={13} className="shrink-0" />
+                    }
+                    <span>{toast.message}</span>
+                </div>
+            )}
+
                 <div className="px-3 py-2 border-b border-white/5">
                     <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Add to Playlist</p>
                 </div>

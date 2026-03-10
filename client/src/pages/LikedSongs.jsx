@@ -1,11 +1,11 @@
 import Sidebar from "@/components/Sidebar.jsx";
 import MusicPlayer from "@/components/MusicPlayer.jsx";
-import { Play, Shuffle, Clock, Heart, MoreHorizontal, Pause } from "lucide-react"; // ← removed Plus, ListMusic, X, Upload
-import { useState, useEffect } from "react"; // ← removed useRef
+import { Play, Shuffle, Clock, Heart, MoreHorizontal, Pause, CheckCircle, AlertCircle } from "lucide-react"; 
+import { useState, useEffect, useRef } from "react"; 
 import axios from "axios";
 import { usePlayer } from "../context/PlayerContext";
-// ← removed createPortal import
-import TrackMenu from "@/components/TrackMenu"; // ← added shared component
+import TrackMenu from "@/components/TrackMenu"; 
+
 
 function formatDuration(seconds) {
     if (!seconds) return "--:--";
@@ -14,14 +14,14 @@ function formatDuration(seconds) {
     return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-// ← entire local TrackMenu const removed
-
-
 export default function LikedSongs() {
     const [likedSongs, setLikedSongs] = useState([]);
     const [loading, setLoading] = useState(true);
     const { playTrack, currentTrack, playing, playQueue } = usePlayer();
     const [openMenuTrackId, setOpenMenuTrackId] = useState(null);
+
+    const [toast, setToast] = useState(null);
+    const toastTimer = useRef(null);
 
     useEffect(() => {
         const fetchLikedSongs = async () => {
@@ -41,6 +41,12 @@ export default function LikedSongs() {
         fetchLikedSongs();
     }, []);
 
+    const showToast = (message, type = "success") => {
+        setToast({ message, type });
+        clearTimeout(toastTimer.current);
+        toastTimer.current = setTimeout(() => setToast(null), 3000);
+    };
+
     const handleUnlike = async (trackId) => {
         try {
             const token = localStorage.getItem("token");
@@ -50,8 +56,10 @@ export default function LikedSongs() {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setLikedSongs((prev) => prev.filter((s) => s.id !== trackId));
+            showToast("Song removed from liked songs");
         } catch (err) {
             console.error("Failed to unlike song", err);
+            showToast("Failed to remove song", "error");
         }
     };
 
@@ -70,6 +78,20 @@ export default function LikedSongs() {
 
     return (
         <div className="flex bg-zinc-950 min-h-screen text-white">
+            {toast && (
+    <div className={`fixed bottom-32 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium shadow-2xl border backdrop-blur-sm transition-all
+            ${toast.type === "error"
+                ? "bg-red-500/10 border-red-500/20 text-red-400"
+                : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+            }`}
+        >
+            {toast.type === "error"
+                ? <AlertCircle size={15} className="shrink-0" />
+                : <CheckCircle size={15} className="shrink-0" />
+            }
+            {toast.message}
+        </div>
+    )}
             <Sidebar />
 
             <div className="flex-1 overflow-y-auto pb-28">
