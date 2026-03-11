@@ -112,6 +112,7 @@ export default function MusicPlayer() {
 					)}
 				</div>
 				<button
+					id="like-button"
 					onClick={handleLike}
 					className={`ml-auto shrink-0 transition-colors duration-200 ${liked ? "text-violet-400" : "text-zinc-600 hover:text-zinc-300"}`}
 				>
