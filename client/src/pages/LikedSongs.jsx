@@ -282,6 +282,7 @@ export default function LikedSongs() {
 
                                         {/* 3 dots — add to playlist */}
                                         <button
+                                            data-testid={`liked-menu-btn-${song.id}`}
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 setOpenMenuTrackId(openMenuTrackId === song.id ? null : song.id);

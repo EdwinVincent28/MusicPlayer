@@ -1,5 +1,3 @@
-// cypress/e2e/playlist-flow.cy.js
-
 let createdPlaylistId = null;
 
 describe("Playlist Flow (real APIs)", () => {
@@ -55,7 +53,6 @@ describe("Playlist Flow (real APIs)", () => {
     cy.get('[data-testid="playlist-name-input"]').type("Cypress Playlist", { delay: 60 });
     cy.wait(400);
 
-    // 👇 CHANGED: Using the specific testid to avoid clicking the background empty-state button
     cy.get('[data-testid="submit-playlist-btn"]').click({ force: true });
 
     // Wait for the modal overlay to disappear
@@ -72,38 +69,42 @@ describe("Playlist Flow (real APIs)", () => {
       });
   });
 
-  // ── Step 3 ─────────────────────────────────────────────────────────────────
-  it("3 — navigates back to Home from the sidebar", () => {
+// ── Step 3 ─────────────────────────────────────────────────────────────────
+  it("3 — navigates to Liked Songs page from the sidebar", () => {
     visitWithToken("/playlist");
 
-    cy.get('[data-testid="nav-home"]', { timeout: 8000 })
+    cy.get('[data-testid="nav-liked-songs"]', { timeout: 8000 })
       .should("be.visible")
       .click();
 
-    cy.url({ timeout: 8000 }).should("include", "/home");
+    cy.url({ timeout: 8000 }).should("include", "/like");
   });
 
   // ── Step 4 ─────────────────────────────────────────────────────────────────
-  it("4 — adds first 3 trending songs to the playlist", () => {
-    visitWithToken("/home");
+  it("4 — adds first 3 liked songs to the playlist", () => {
+    visitWithToken("/like");
 
-    cy.get('[data-testid^="trending-menu-btn-"]', { timeout: 12000 })
+    // Wait for the liked songs list to load
+    cy.get('[data-testid^="liked-menu-btn-"]', { timeout: 12000 })
       .should("have.length.gte", 3);
     cy.wait(500);
 
     const addSongAtRow = (rowIndex) => {
-      cy.get('[data-testid^="trending-menu-btn-"]')
+      // Click the 3-dots menu for the specific row
+      cy.get('[data-testid^="liked-menu-btn-"]')
         .eq(rowIndex)
         .click({ force: true });
       cy.wait(600);
 
+      // Click the dynamically created playlist in the dropdown
       cy.get(`[data-testid="add-to-playlist-${createdPlaylistId}"]`, { timeout: 6000 })
         .should("be.visible")
         .click();
       cy.wait(800);
 
+      // Verify success toast
       cy.contains("Song added to playlist").should("be.visible");
-      cy.wait(1600);
+      cy.wait(1600); // Wait for toast to disappear
     };
 
     addSongAtRow(0);
@@ -125,19 +126,18 @@ describe("Playlist Flow (real APIs)", () => {
   });
 
   // ── Step 6 ─────────────────────────────────────────────────────────────────
-    it("6 — clicks Play All and music player appears", () => {
-        visitWithToken(`/playlist/${createdPlaylistId}`);
+  it("6 — clicks Play All and music player appears", () => {
+    visitWithToken(`/playlist/${createdPlaylistId}`);
 
-        // 👇 Tell Cypress to explicitly wait until the API has loaded the songs 
-        // and the button is no longer disabled
-        cy.get('[data-testid="play-all-btn"]', { timeout: 10000 })
-        .should("not.be.disabled")
-        .click();
-        
-        cy.wait(600);
+    // Explicitly wait until the API has loaded the songs and the button is active
+    cy.get('[data-testid="play-all-btn"]', { timeout: 10000 })
+      .should("not.be.disabled")
+      .click();
+      
+    cy.wait(600);
 
-        cy.get('[data-testid="music-player"]').should("be.visible");
-    });
+    cy.get('[data-testid="music-player"]').should("be.visible");
+  });
 
   // ── Step 7 ─────────────────────────────────────────────────────────────────
   it("7 — removes the first song from the playlist", () => {
