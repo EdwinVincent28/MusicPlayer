@@ -11,7 +11,7 @@ import {
 	ListMusic,
 	Music2,
 	ChevronRight,
-	MoreHorizontal
+	MoreHorizontal,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -357,7 +357,9 @@ export default function LandingPage() {
 										</div>
 									)}
 									{!searchLoading && results.length === 0 && (
-										<p className="p-4 text-sm text-zinc-400">No results for "{query}"</p>
+										<p className="p-4 text-sm text-zinc-400">
+											No results for "{query}"
+										</p>
 									)}
 									{!searchLoading &&
 										results.slice(0, 8).map((track) => (
@@ -368,26 +370,42 @@ export default function LandingPage() {
 												<img
 													src={track.album?.cover || track.album?.cover_small}
 													alt={track.title}
-													onClick={() => { playTrack(track); setQuery(""); setResults([]); setShowDropdown(false); }}
+													onClick={() => {
+														playTrack(track);
+														setQuery("");
+														setResults([]);
+														setShowDropdown(false);
+													}}
 													className="w-10 h-10 rounded-lg object-cover shrink-0 cursor-pointer"
 												/>
 												<div
 													className="min-w-0 flex-1 cursor-pointer"
-													onClick={() => { playTrack(track); setQuery(""); setResults([]); setShowDropdown(false); }}
+													onClick={() => {
+														playTrack(track);
+														setQuery("");
+														setResults([]);
+														setShowDropdown(false);
+													}}
 												>
 													<p className="text-sm text-white font-medium truncate group-hover:text-violet-300 transition-colors">
 														{track.title}
 													</p>
-													<p className="text-xs text-zinc-500 truncate">{track.artist?.name}</p>
+													<p className="text-xs text-zinc-500 truncate">
+														{track.artist?.name}
+													</p>
 												</div>
-												<span className="text-xs text-zinc-600 shrink-0">{formatDuration(track.duration)}</span>
+												<span className="text-xs text-zinc-600 shrink-0">
+													{formatDuration(track.duration)}
+												</span>
 
 												{/* 3-dot menu — sits OUTSIDE the scrollable div's overflow */}
 												<div className="relative shrink-0">
 													<button
 														onClick={(e) => {
 															e.stopPropagation();
-															setOpenMenuTrackId(openMenuTrackId === track.id ? null : track.id);
+															setOpenMenuTrackId(
+																openMenuTrackId === track.id ? null : track.id,
+															);
 														}}
 														className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-white/5 transition-colors opacity-0 group-hover:opacity-100"
 													>
@@ -399,7 +417,11 @@ export default function LandingPage() {
 																id: track.id,
 																title: track.title,
 																artist: track.artist?.name,
-																cover: track.album?.cover_medium || track.album?.cover || track.album?.cover_big || track.album?.cover_small,
+																cover:
+																	track.album?.cover_medium ||
+																	track.album?.cover ||
+																	track.album?.cover_big ||
+																	track.album?.cover_small,
 																preview: track.preview,
 																duration: track.duration,
 															}}
@@ -494,38 +516,6 @@ export default function LandingPage() {
 						)}
 					</section>
 
-					{/* ── NEW: Top Trending Tracks — horizontal scroll cards ── */}
-					<ScrollSection
-						title="Top Trending Tracks"
-						icon={TrendingUp}
-						loading={tracksLoading}
-					>
-						{trendingTracks.map((track, i) => (
-							<TrackCard
-								key={track.id}
-								track={track}
-								index={i}
-								isActive={currentTrack?.id === track.id}
-								isPlaying={currentTrack?.id === track.id && playing}
-								onPlay={() => {
-									if (currentTrack?.id === track.id) {
-										togglePlay();
-										return;
-									}
-									const queue = trendingTracks.map((t) => ({
-										id: t.id,
-										title: t.title,
-										artist: t.artist?.name,
-										cover: t.album?.cover_medium,
-										duration: t.duration,
-										preview: t.preview,
-									}));
-									playQueue(queue, i);
-								}}
-							/>
-						))}
-					</ScrollSection>
-
 					{/* ── NEW: Charts full list — table ── */}
 					<section>
 						<div className="flex items-center gap-2 mb-4">
@@ -546,101 +536,129 @@ export default function LandingPage() {
 
 							{/* Rows */}
 							{tracksLoading
-								? Array.from({ length: 5 }).map((_, i) => <TrackSkeleton key={i} />)
+								? Array.from({ length: 5 }).map((_, i) => (
+										<TrackSkeleton key={i} />
+									))
 								: trendingTracks.slice(0, 10).map((track, i) => {
-									const isActive = currentTrack?.id === track.id;
-									const isPlaying = isActive && playing;
-									return (
-										<div
-											key={track.id}
-											onClick={(e) => {
-												if (e.defaultPrevented) return;
-												if (isActive) { togglePlay(); return; }
-												const queue = trendingTracks.map((t) => ({
-													id: t.id,
-													title: t.title,
-													artist: t.artist?.name,
-													cover: t.album?.cover_medium,
-													duration: t.duration,
-													preview: t.preview,
-												}));
-												playQueue(queue, i);
-											}}
-											className={`grid grid-cols-[40px_1fr_1fr_80px_40px] gap-4 px-5 py-3 items-center cursor-pointer transition-colors group border-b border-white/[0.03] last:border-0
+										const isActive = currentTrack?.id === track.id;
+										const isPlaying = isActive && playing;
+										return (
+											<div
+												key={track.id}
+												onClick={(e) => {
+													if (e.defaultPrevented) return;
+													if (isActive) {
+														togglePlay();
+														return;
+													}
+													const queue = trendingTracks.map((t) => ({
+														id: t.id,
+														title: t.title,
+														artist: t.artist?.name,
+														cover: t.album?.cover_medium,
+														duration: t.duration,
+														preview: t.preview,
+													}));
+													playQueue(queue, i);
+												}}
+												className={`grid grid-cols-[40px_1fr_1fr_80px_40px] gap-4 px-5 py-3 items-center cursor-pointer transition-colors group border-b border-white/[0.03] last:border-0
 												${isActive ? "bg-violet-600/10" : "hover:bg-white/5"}`}
-										>
-											{/* Col 1 — index / play icon */}
-											<div className="flex items-center justify-center">
-												<span className={`text-sm font-medium group-hover:hidden ${isActive ? "text-violet-400" : "text-zinc-600"}`}>
-													{i + 1}
-												</span>
-												{isPlaying ? (
-													<Pause size={14} className="text-violet-400 hidden group-hover:block" fill="currentColor" />
-												) : (
-													<Play size={14} className="text-violet-400 hidden group-hover:block" fill="currentColor" />
-												)}
-											</div>
-
-											{/* Col 2 — title + cover */}
-											<div className="flex items-center gap-3 min-w-0">
-												<img
-													src={track.album?.cover_small}
-													alt={track.title}
-													className="w-9 h-9 rounded-lg object-cover shrink-0"
-												/>
-												<div className="min-w-0">
-													<p className={`text-sm font-medium truncate transition-colors ${isActive ? "text-violet-300" : "text-white group-hover:text-violet-300"}`}>
-														{track.title}
-													</p>
-													<p className="text-zinc-500 text-xs truncate">{track.artist?.name}</p>
-												</div>
-												{isPlaying && (
-													<span className="shrink-0 flex gap-0.5 items-end h-3 ml-1">
-														{[1, 2, 3].map((b) => (
-															<span
-																key={b}
-																className="w-0.5 bg-violet-500 rounded-full animate-pulse"
-																style={{ height: `${8 + b * 3}px`, animationDelay: `${b * 0.15}s` }}
-															/>
-														))}
+											>
+												{/* Col 1 — index / play icon */}
+												<div className="flex items-center justify-center">
+													<span
+														className={`text-sm font-medium group-hover:hidden ${isActive ? "text-violet-400" : "text-zinc-600"}`}
+													>
+														{i + 1}
 													</span>
-												)}
-											</div>
+													{isPlaying ? (
+														<Pause
+															size={14}
+															className="text-violet-400 hidden group-hover:block"
+															fill="currentColor"
+														/>
+													) : (
+														<Play
+															size={14}
+															className="text-violet-400 hidden group-hover:block"
+															fill="currentColor"
+														/>
+													)}
+												</div>
 
-											{/* Col 3 — album */}
-											<span className="text-zinc-500 text-sm truncate">{track.album?.title}</span>
-
-											{/* Col 4 — duration */}
-											<span className="text-zinc-500 text-sm text-right">{formatDuration(track.duration)}</span>
-
-											{/* Col 5 — 3-dot menu */}
-											<div className="relative flex items-center justify-center">
-												<button
-													onClick={(e) => {
-														e.stopPropagation();
-														setOpenMenuTrackId(openMenuTrackId === track.id ? null : track.id);
-													}}
-													className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-white/5 transition-colors opacity-0 group-hover:opacity-100"
-												>
-													<MoreHorizontal size={16} />
-												</button>
-												{openMenuTrackId === track.id && (
-													<TrackMenu
-														trackData={{
-															id: track.id,
-															title: track.title,
-															artist: track.artist?.name,
-															cover: track.album?.cover_medium,
-															preview: track.preview,
-															duration: track.duration,
-														}}
-														onClose={() => setOpenMenuTrackId(null)}
+												{/* Col 2 — title + cover */}
+												<div className="flex items-center gap-3 min-w-0">
+													<img
+														src={track.album?.cover_small}
+														alt={track.title}
+														className="w-9 h-9 rounded-lg object-cover shrink-0"
 													/>
-												)}
+													<div className="min-w-0">
+														<p
+															className={`text-sm font-medium truncate transition-colors ${isActive ? "text-violet-300" : "text-white group-hover:text-violet-300"}`}
+														>
+															{track.title}
+														</p>
+														<p className="text-zinc-500 text-xs truncate">
+															{track.artist?.name}
+														</p>
+													</div>
+													{isPlaying && (
+														<span className="shrink-0 flex gap-0.5 items-end h-3 ml-1">
+															{[1, 2, 3].map((b) => (
+																<span
+																	key={b}
+																	className="w-0.5 bg-violet-500 rounded-full animate-pulse"
+																	style={{
+																		height: `${8 + b * 3}px`,
+																		animationDelay: `${b * 0.15}s`,
+																	}}
+																/>
+															))}
+														</span>
+													)}
+												</div>
+
+												{/* Col 3 — album */}
+												<span className="text-zinc-500 text-sm truncate">
+													{track.album?.title}
+												</span>
+
+												{/* Col 4 — duration */}
+												<span className="text-zinc-500 text-sm text-right">
+													{formatDuration(track.duration)}
+												</span>
+
+												{/* Col 5 — 3-dot menu */}
+												<div className="relative flex items-center justify-center">
+													<button
+														onClick={(e) => {
+															e.stopPropagation();
+															setOpenMenuTrackId(
+																openMenuTrackId === track.id ? null : track.id,
+															);
+														}}
+														className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-white/5 transition-colors opacity-0 group-hover:opacity-100"
+													>
+														<MoreHorizontal size={16} />
+													</button>
+													{openMenuTrackId === track.id && (
+														<TrackMenu
+															trackData={{
+																id: track.id,
+																title: track.title,
+																artist: track.artist?.name,
+																cover: track.album?.cover_medium,
+																preview: track.preview,
+																duration: track.duration,
+															}}
+															onClose={() => setOpenMenuTrackId(null)}
+														/>
+													)}
+												</div>
 											</div>
-										</div>
-									);
-								})}
+										);
+									})}
 						</div>
 					</section>
 
