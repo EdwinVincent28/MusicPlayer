@@ -348,7 +348,7 @@ export default function LandingPage() {
 							className="w-full bg-zinc-800/70 text-white placeholder-zinc-500 pl-10 pr-4 py-2.5 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
 						/>
 						{showDropdown && query.trim() && (
-							<div className="absolute top-12 w-full bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/60 z-50">
+							<div data-testid="search-dropdown" className="absolute top-12 w-full bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/60 z-50">
 								<div className="max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden rounded-2xl">
 									{searchLoading && (
 										<div className="flex items-center gap-3 p-4">
@@ -387,7 +387,7 @@ export default function LandingPage() {
 														setShowDropdown(false);
 													}}
 												>
-													<p className="text-sm text-white font-medium truncate group-hover:text-violet-300 transition-colors">
+													<p data-testid="search-results" className="text-sm text-white font-medium truncate group-hover:text-violet-300 transition-colors">
 														{track.title}
 													</p>
 													<p className="text-xs text-zinc-500 truncate">
@@ -401,6 +401,7 @@ export default function LandingPage() {
 												{/* 3-dot menu — sits OUTSIDE the scrollable div's overflow */}
 												<div className="relative shrink-0">
 													<button
+														data-testid={`trending-menu-btn-${track.id}`}
 														onClick={(e) => {
 															e.stopPropagation();
 															setOpenMenuTrackId(

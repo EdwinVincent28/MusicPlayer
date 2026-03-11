@@ -125,6 +125,7 @@ export default function Playlists() {
                             <p className="text-zinc-500 text-sm">Your personal collections</p>
                         </div>
                         <button
+                            data-testid="new-playlist-btn"
                             onClick={() => setShowModal(true)}
                             className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-600 text-white text-sm font-semibold shadow-lg shadow-violet-900/40 hover:scale-105 active:scale-95 transition-transform duration-150"
                         >
@@ -175,6 +176,7 @@ export default function Playlists() {
                                 return (
                                     <div
                                         key={playlist._id}
+                                        data-testid={`playlist-card-${playlist._id}`}
                                         onClick={() => navigate(`/playlist/${playlist._id}`)}
                                         className="group cursor-pointer"
                                     >
@@ -274,6 +276,7 @@ export default function Playlists() {
                                 </label>
                                 <input
                                     type="text"
+                                    data-testid="playlist-name-input"
                                     value={newName}
                                     onChange={(e) => setNewName(e.target.value)}
                                     onKeyDown={(e) => e.key === "Enter" && handleCreate()}
@@ -306,6 +309,7 @@ export default function Playlists() {
                             </button>
                             <button
                                 onClick={handleCreate}
+                                data-testid="submit-playlist-btn"
                                 disabled={!newName.trim() || creating}
                                 className="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-600 text-white text-sm font-semibold shadow-lg shadow-violet-900/40 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
                             >

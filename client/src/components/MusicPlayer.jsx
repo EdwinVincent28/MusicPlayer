@@ -81,7 +81,7 @@ export default function MusicPlayer() {
 	};
 
 	return (
-		<div className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900/90 backdrop-blur-2xl border-t border-white/5 px-6 py-4 flex items-center justify-between gap-4">
+		<div data-testid="music-player" className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900/90 backdrop-blur-2xl border-t border-white/5 px-6 py-4 flex items-center justify-between gap-4">
 			{/* Track Info */}
 			<div className="flex items-center gap-4 w-64 shrink-0">
 				<div className="relative shrink-0">

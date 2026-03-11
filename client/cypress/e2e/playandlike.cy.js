@@ -32,20 +32,20 @@ describe("Search and play song and like it", () => {
     cy.wait(700);
 
     // ── 4. Wait for real search results ─────────────────────────────────────
-    cy.get(".absolute.top-12", { timeout: 10000 })
+    cy.get('[data-testid="search-dropdown"]', { timeout: 10000 })
       .should("be.visible");
     cy.wait(500);
 
     // ── 5. Click the first result title ─────────────────────────────────────
     // Target the <p> tag with the track title text inside the dropdown
-    cy.get(".absolute.top-12")
-      .find("p.text-sm.text-white.font-medium")
+    cy.get('[data-testid="search-dropdown"]')
+      .find('[data-testid="search-results"]')
       .first()
       .click();
     cy.wait(800);
 
     // ── 6. Music player appears ──────────────────────────────────────────────
-    cy.get(".fixed.bottom-0.left-0.right-0", { timeout: 8000 })
+    cy.get('[data-testid="music-player"]', { timeout: 8000 })
       .should("be.visible");
     cy.wait(600);
 

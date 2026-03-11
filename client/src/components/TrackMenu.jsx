@@ -165,6 +165,7 @@ export default function TrackMenu({ trackData, onClose }) {
                     {!loading && userPlaylists.map((pl) => (
                         <button
                             key={pl._id}
+                            data-testid={`add-to-playlist-${pl._id}`}
                             onClick={() => addToPlaylist(pl._id)}
                             className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition-colors text-left"
                         >

@@ -168,6 +168,7 @@ console.log("image path:", data.playlistImage);
                 {/* Controls */}
                 <div className="px-8 py-6 flex items-center gap-5 border-b border-white/5">
                     <button
+                        data-testid="play-all-btn"
                         onClick={() => playQueue(songs.map((song) => ({
                             id: song.id,
                             title: song.title,
@@ -301,6 +302,7 @@ console.log("image path:", data.playlistImage);
 
                                 {/* Remove button */}
                                 <button
+                                    data-testid={`remove-song-btn-${song.id}`}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         handleRemove(song.id);
