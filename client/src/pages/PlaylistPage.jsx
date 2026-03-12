@@ -196,6 +196,7 @@ export default function Playlists() {
                                                     <Play size={16} fill="white" className="text-white ml-0.5" />
                                                 </button>
                                                 <button
+                                                    data-testid={`delete-playlist-btn-${playlist._id}`}
                                                     onClick={(e) => handleDelete(e, playlist._id)}
                                                     className="w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center hover:bg-red-500/60 transition-colors"
                                                 >
