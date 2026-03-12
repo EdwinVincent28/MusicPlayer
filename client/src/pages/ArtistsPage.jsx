@@ -193,6 +193,7 @@ export default function ArtistsPage() {
 								<button
 									onClick={clearSearch}
 									className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+									data-testid="clear-search"
 								>
 									<X size={15} />
 								</button>

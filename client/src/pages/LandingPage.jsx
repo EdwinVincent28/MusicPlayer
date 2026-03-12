@@ -80,7 +80,10 @@ function TrackCard({ track, index, onPlay, isActive, isPlaying }) {
 				<div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-black/50 backdrop-blur flex items-center justify-center">
 					<span className="text-white text-[10px] font-black">{index + 1}</span>
 				</div>
-				<button className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-violet-600 flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-200 hover:bg-violet-500 hover:scale-110">
+				<button
+					className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-violet-600 flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-200 hover:bg-violet-500 hover:scale-110"
+					data-testid={`play-btn-${track.id}`}
+				>
 					{isPlaying ? (
 						<Pause size={14} fill="white" className="text-white" />
 					) : (
@@ -126,7 +129,10 @@ function MediaCard({ item, type }) {
 					}}
 				/>
 				<div className="absolute inset-0 bg-gradient-to-t from-zinc-950/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-				<button className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-violet-600 flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-200 hover:bg-violet-500">
+				<button
+					className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-violet-600 flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-200 hover:bg-violet-500"
+					data-testid={`play-btn-${type}-${item.id}`}
+				>
 					<Play size={14} fill="white" className="text-white ml-0.5" />
 				</button>
 			</div>
@@ -154,7 +160,10 @@ function ScrollSection({
 					{Icon && <Icon size={18} className="text-violet-400" />}
 					<h2 className="text-lg font-bold text-white">{title}</h2>
 				</div>
-				<button className="flex items-center gap-1 text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium">
+				<button
+					className="flex items-center gap-1 text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium"
+					data-testid={`see-all-${title.toLowerCase().replace(/\s/g, "-")}`}
+				>
 					See all <ChevronRight size={14} />
 				</button>
 			</div>
@@ -348,7 +357,10 @@ export default function LandingPage() {
 							className="w-full bg-zinc-800/70 text-white placeholder-zinc-500 pl-10 pr-4 py-2.5 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
 						/>
 						{showDropdown && query.trim() && (
-							<div data-testid="search-dropdown" className="absolute top-12 w-full bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/60 z-50">
+							<div
+								data-testid="search-dropdown"
+								className="absolute top-12 w-full bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/60 z-50"
+							>
 								<div className="max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden rounded-2xl">
 									{searchLoading && (
 										<div className="flex items-center gap-3 p-4">
@@ -387,7 +399,10 @@ export default function LandingPage() {
 														setShowDropdown(false);
 													}}
 												>
-													<p data-testid="search-results" className="text-sm text-white font-medium truncate group-hover:text-violet-300 transition-colors">
+													<p
+														data-testid="search-results"
+														className="text-sm text-white font-medium truncate group-hover:text-violet-300 transition-colors"
+													>
 														{track.title}
 													</p>
 													<p className="text-xs text-zinc-500 truncate">
@@ -492,6 +507,7 @@ export default function LandingPage() {
 												handlePlayAll();
 											}}
 											className="bg-violet-600 hover:bg-violet-500 text-white rounded-full px-6 shadow-lg shadow-violet-900/50 gap-2 transition-all duration-200 hover:scale-105"
+											data-testid="play-featured-btn"
 										>
 											{isFeaturedPlaying ? (
 												<>
@@ -506,6 +522,7 @@ export default function LandingPage() {
 										<Button
 											variant="outline"
 											className="rounded-full border-white/20 text-white bg-white/5 hover:bg-white/10 backdrop-blur"
+											data-testid="view-chart-btn"
 										>
 											View Chart
 										</Button>
@@ -640,6 +657,7 @@ export default function LandingPage() {
 															);
 														}}
 														className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-white/5 transition-colors opacity-0 group-hover:opacity-100"
+														data-testid={`chart-menu-btn-${track.id}`}
 													>
 														<MoreHorizontal size={16} />
 													</button>

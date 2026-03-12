@@ -21,21 +21,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { usePlayer } from "../context/PlayerContext.jsx";
+import { formatDuration, formatFans } from "../utils/musicUtils";
 
 const PROXY = "https://corsproxy.io/?";
 const DEEZER = "https://api.deezer.com";
 
-function formatFans(n) {
-	if (!n) return "—";
-	if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-	if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-	return n.toString();
-}
+// function formatFans(n) {
+// 	if (!n) return "—";
+// 	if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+// 	if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+// 	return n.toString();
+// }
 
-function formatDuration(secs) {
-	if (!secs) return "--:--";
-	return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
-}
+// function formatDuration(secs) {
+// 	if (!secs) return "--:--";
+// 	return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
+// }
 
 // ─── Skeleton loaders ────────────────────────────────────────────────────────
 function HeroSkeleton() {
@@ -161,6 +162,7 @@ function TrackRow({ track, albumCover, artistName, index }) {
 					setLiked(!liked);
 				}}
 				className={`transition-colors duration-200 opacity-0 group-hover:opacity-100 ${liked ? "text-violet-400 !opacity-100" : "text-zinc-600 hover:text-zinc-300"}`}
+				data-testid="like-btn"
 			>
 				<Heart size={15} fill={liked ? "currentColor" : "none"} />
 			</button>
@@ -235,6 +237,7 @@ function AlbumSection({ album, artistName }) {
 							playQueue(queueTracks, 0);
 						}}
 						className="w-10 h-10 rounded-full bg-violet-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-violet-500 hover:scale-110 shadow-lg shadow-violet-900/50"
+						data-testid="play-btn"
 					>
 						<Play size={14} fill="white" className="text-white ml-0.5" />
 					</button>
@@ -480,6 +483,7 @@ export default function ArtistPage() {
 						onClick={handlePlayAll}
 						disabled={topTracks.length === 0}
 						className="bg-violet-600 hover:bg-violet-500 text-white rounded-full px-7 gap-2 shadow-lg shadow-violet-900/40 hover:scale-105 active:scale-95 transition-all duration-150 disabled:opacity-40"
+						data-testid="play-btn"
 					>
 						{playing && currentTrack?.artist === artist?.name ? (
 							<>
@@ -507,6 +511,7 @@ export default function ArtistPage() {
 										: "border-violet-500/50 text-violet-300 bg-violet-600/10"
 									: "border-white/20 text-white bg-transparent hover:bg-white/10"
 							}`}
+						data-testid="follow-btn"
 					>
 						{followLoading ? (
 							<Loader2 size={15} className="animate-spin" />
@@ -548,6 +553,7 @@ export default function ArtistPage() {
 								onClick={() => setActiveTab(key)}
 								className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all duration-200 border-b-2 -mb-px
 									${activeTab === key ? "border-violet-500 text-violet-300" : "border-transparent text-zinc-500 hover:text-zinc-300"}`}
+								data-testid={`tab-${key}`}
 							>
 								<Icon size={15} />
 								{label}
