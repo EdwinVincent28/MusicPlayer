@@ -13,8 +13,6 @@ import axios from "axios";
 import LandingPage from "../LandingPage";
 import { usePlayer } from "../../context/PlayerContext";
 
-// ─── Mocks ────────────────────────────────────────────────────────────────────
-
 jest.mock("axios");
 jest.mock("../../context/PlayerContext");
 
@@ -73,8 +71,6 @@ afterAll(() => {
 	console.error.mockRestore();
 	console.log.mockRestore();
 });
-
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const mockTrack = (overrides = {}) => ({
 	id: 1,
@@ -157,8 +153,6 @@ const mockPlayerContext = {
 	playing: false,
 };
 
-// ─── Setup ────────────────────────────────────────────────────────────────────
-
 function setupAxios() {
 	axios.get.mockImplementation((url) => {
 		if (url.includes("/api/user/")) return Promise.resolve({ data: mockUser });
@@ -192,11 +186,7 @@ async function renderAndLoad() {
 	await act(async () => {});
 }
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
-
 describe("LandingPage", () => {
-	// ── Layout ───────────────────────────────────────────────────────────────────
-
 	describe("Layout", () => {
 		it("renders sidebar", async () => {
 			await renderAndLoad();
@@ -245,8 +235,6 @@ describe("LandingPage", () => {
 			expect(screen.getByTestId("see-all-trending-albums")).toBeInTheDocument();
 		});
 	});
-
-	// ── Hero banner ───────────────────────────────────────────────────────────────
 
 	describe("Hero banner", () => {
 		it("shows skeleton while loading", () => {
@@ -319,8 +307,6 @@ describe("LandingPage", () => {
 			expect(togglePlay).toHaveBeenCalled();
 		});
 	});
-
-	// ── Trending tracks table ─────────────────────────────────────────────────────
 
 	describe("Trending tracks table", () => {
 		it("shows skeleton rows while loading", () => {
@@ -404,8 +390,6 @@ describe("LandingPage", () => {
 		});
 	});
 
-	// ── Trending playlists & albums ───────────────────────────────────────────────
-
 	describe("Trending Playlists", () => {
 		it("renders playlist titles", async () => {
 			await renderAndLoad();
@@ -442,8 +426,6 @@ describe("LandingPage", () => {
 			expect(screen.getByTestId("play-btn-album-20")).toBeInTheDocument();
 		});
 	});
-
-	// ── Search ────────────────────────────────────────────────────────────────────
 
 	describe("Search", () => {
 		it("does not show dropdown before typing", async () => {
@@ -629,8 +611,6 @@ describe("LandingPage", () => {
 		});
 	});
 
-	// ── User profile ──────────────────────────────────────────────────────────────
-
 	describe("User profile", () => {
 		it("fetches user data on mount using token", async () => {
 			await renderAndLoad();
@@ -681,8 +661,6 @@ describe("LandingPage", () => {
 			);
 		});
 	});
-
-	// ── Error / edge cases ────────────────────────────────────────────────────────
 
 	describe("Error and edge cases", () => {
 		it("handles chart fetch failure gracefully (no crash)", async () => {
