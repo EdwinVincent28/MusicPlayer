@@ -20,17 +20,6 @@ const navItems = [
 	{ icon: LogOut, label: "Logout", path: "/" },
 ];
 
-// const libraryItems = [
-
-// ];
-
-// const recentArtists = [
-// 	{ name: "The Weeknd", img: "https://picsum.photos/seed/weeknd/40/40" },
-// 	{ name: "Dua Lipa", img: "https://picsum.photos/seed/dualipa/40/40" },
-// 	{ name: "Drake", img: "https://picsum.photos/seed/drake/40/40" },
-// 	{ name: "Billie Eilish", img: "https://picsum.photos/seed/billie/40/40" },
-// ];
-
 export default function Sidebar() {
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -72,44 +61,6 @@ export default function Sidebar() {
 					);
 				})}
 			</nav>
-
-			{/* Library */}
-			{/* <nav className="flex flex-col gap-1">
-				<p className="text-xs text-zinc-500 uppercase tracking-widest px-3 mb-2 font-semibold">
-					Library
-				</p>
-				{libraryItems.map(({ icon: Icon, label }) => (
-					<button
-						key={label}
-						className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-all duration-200 w-full text-left"
-					>
-						<Icon size={18} />
-						{label}
-					</button>
-				))}
-			</nav> */}
-
-			{/* Recent Artists */}
-			{/* <div className="mt-auto flex flex-col gap-3">
-				<p className="text-xs text-zinc-500 uppercase tracking-widest px-2 font-semibold">
-					Recent Artists
-				</p>
-				{recentArtists.map((artist) => (
-					<button
-						key={artist.name}
-						className="flex items-center gap-3 px-2 py-1 rounded-xl hover:bg-white/5 transition-all w-full text-left"
-					>
-						<img
-							src={artist.img}
-							alt={artist.name}
-							className="w-8 h-8 rounded-full object-cover ring-1 ring-white/10"
-						/>
-						<span className="text-sm text-zinc-400 hover:text-white transition-colors">
-							{artist.name}
-						</span>
-					</button>
-				))}
-			</div> */}
 		</aside>
 	);
 }
