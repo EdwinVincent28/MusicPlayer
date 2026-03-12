@@ -5,14 +5,15 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { usePlayer } from "../context/PlayerContext";
 import TrackMenu from "@/components/TrackMenu"; 
+import { formatDuration, songCount } from "../utils/musicUtils";
 
 
-function formatDuration(seconds) {
-    if (!seconds) return "--:--";
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
-}
+// export function formatDuration(seconds) {
+//     if (!seconds) return "--:--";
+//     const m = Math.floor(seconds / 60);
+//     const s = seconds % 60;
+//     return `${m}:${s.toString().padStart(2, "0")}`;
+// }
 
 export default function LikedSongs() {
     const [likedSongs, setLikedSongs] = useState([]);

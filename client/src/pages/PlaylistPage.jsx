@@ -4,6 +4,7 @@ import { Plus, ListMusic, Trash2, Play, Music2, Upload, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { formatDuration, songCount } from "../utils/musicUtils";
 
 export default function Playlists() {
     const [playlists, setPlaylists] = useState([]);
@@ -92,11 +93,11 @@ export default function Playlists() {
         }
     };
 
-    const songCount = (playlist) => {
-        if (!playlist.playlistSongs) return 0;
-        if (playlist.playlistSongs instanceof Map) return playlist.playlistSongs.size;
-        return Object.keys(playlist.playlistSongs).length;
-    };
+    // const songCount = (playlist) => {
+    //     if (!playlist.playlistSongs) return 0;
+    //     if (playlist.playlistSongs instanceof Map) return playlist.playlistSongs.size;
+    //     return Object.keys(playlist.playlistSongs).length;
+    // };
 
     // Gradient palette for playlist cards
     const gradients = [
