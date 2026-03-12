@@ -6,6 +6,7 @@ import axios from "../api/axiosInstance";
 import { usePlayer } from "../context/PlayerContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { formatDuration, songCount } from "../utils/musicUtils";
+import { resolveImageUrl } from "../api/axiosInstance";
 
 // export function formatDuration(seconds) {
 //     if (!seconds) return "--:--";
@@ -141,7 +142,7 @@ console.log("image path:", data.playlistImage);
                         <div className={`w-44 h-44 rounded-2xl bg-gradient-to-br ${fallbackGradient} flex items-center justify-center shadow-2xl shadow-violet-900/60 shrink-0 overflow-hidden`}>
                             {playlist?.playlistImage ? (
                                 <img
-                                    src={playlist.playlistImage}
+                                    src={resolveImageUrl(playlist.playlistImage)}
                                     alt={playlist?.name}
                                     className="w-full h-full object-cover"
                                         onError={(e) => console.log("IMAGE FAILED TO LOAD:", e.target.src)}

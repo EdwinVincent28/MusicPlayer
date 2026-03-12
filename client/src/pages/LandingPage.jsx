@@ -1,6 +1,7 @@
 import Sidebar from "@/components/Sidebar.jsx";
 import PlaylistCard from "@/components/PlaylistCard.jsx";
 import MusicPlayer from "@/components/MusicPlayer.jsx";
+import { resolveImageUrl } from "../api/axiosInstance";
 import {
 	Play,
 	Pause,
@@ -448,7 +449,7 @@ export default function LandingPage() {
 					<div className="flex items-center gap-3 shrink-0">
 						{profileImage ? (
 							<img
-								src={profileImage}
+								src={resolveImageUrl(profileImage)}
 								alt="Profile"
 								className="w-8 h-8 rounded-full object-cover ring-2 ring-violet-500/30"
 							/>

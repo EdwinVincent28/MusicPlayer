@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import axios from "../api/axiosInstance";
 import { useNavigate } from "react-router-dom";
 import { formatDuration, songCount } from "../utils/musicUtils";
+import { resolveImageUrl } from "../api/axiosInstance";
 
 export default function Playlists() {
     const [playlists, setPlaylists] = useState([]);
@@ -184,7 +185,7 @@ export default function Playlists() {
                                         {/* Cover */}
                                         <div className={`relative w-full aspect-square rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-3 shadow-lg overflow-hidden transition-transform duration-200 group-hover:scale-[1.03]`}>
                                             {playlist.playlistImage
-                                                ? <img src={playlist.playlistImage} alt={playlist.name} className="w-full h-full object-cover absolute inset-0" />
+                                                ? <img src={resolveImageUrl(playlist.playlistImage)} alt={playlist.name} className="w-full h-full object-cover absolute inset-0" />
                                                 : <Music2 size={48} className="text-white/30" />
                                             }
 
