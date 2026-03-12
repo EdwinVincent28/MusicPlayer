@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import axios from "../api/axiosInstance";
 import { createPortal } from "react-dom";
 import { Plus, ListMusic, X, Upload, AlertCircle, CheckCircle } from "lucide-react";
+import { resolveImageUrl } from "../api/axiosInstance";
 
 export default function TrackMenu({ trackData, onClose }) {
     const [userPlaylists, setUserPlaylists] = useState([]);
@@ -171,7 +172,7 @@ export default function TrackMenu({ trackData, onClose }) {
                         >
                             <div className="w-7 h-7 rounded-md bg-zinc-800 flex items-center justify-center shrink-0 overflow-hidden">
                                 {pl.playlistImage
-                                    ? <img src={pl.playlistImage} alt="" className="w-full h-full object-cover" />
+                                    ? <img src={resolveImageUrl(pl.playlistImage)} alt="" className="w-full h-full object-cover" />
                                     : <ListMusic size={12} className="text-zinc-500" />
                                 }
                             </div>
