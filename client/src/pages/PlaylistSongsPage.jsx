@@ -2,7 +2,7 @@ import Sidebar from "@/components/Sidebar.jsx";
 import MusicPlayer from "@/components/MusicPlayer.jsx";
 import { Play, Shuffle, Clock, Pause, Music2, Trash2, CheckCircle, AlertCircle  } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import axios from "../api/axiosInstance";
 import { usePlayer } from "../context/PlayerContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { formatDuration, songCount } from "../utils/musicUtils";

@@ -2,7 +2,7 @@ import Sidebar from "@/components/Sidebar.jsx";
 import MusicPlayer from "@/components/MusicPlayer.jsx";
 import { Plus, ListMusic, Trash2, Play, Music2, Upload, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import axios from "../api/axiosInstance";
 import { useNavigate } from "react-router-dom";
 import { formatDuration, songCount } from "../utils/musicUtils";
 

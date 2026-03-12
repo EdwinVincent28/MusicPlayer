@@ -16,7 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import axios from "../api/axiosInstance";
 import { usePlayer } from "../context/PlayerContext";
 import { jwtDecode } from "jwt-decode";
 import { formatDuration } from "../utils/musicUtils";
