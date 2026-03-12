@@ -13,7 +13,9 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': 'https://musicplayer-backend-ddnr.onrender.com',
-      "/images": "https://musicplayer-backend-ddnr.onrender.com",
+      // '/api': 'https://musicplayer-backend-ddnr.onrender.com',
+      '/api': 'http://localhost:4000',
+      // "/images": "https://musicplayer-backend-ddnr.onrender.com",
+      "/images": "http://localhost:4000",
   }}
 })

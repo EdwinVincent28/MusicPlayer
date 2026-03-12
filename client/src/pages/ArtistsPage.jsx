@@ -5,9 +5,6 @@ import Sidebar from "@/components/Sidebar.jsx";
 import MusicPlayer from "@/components/MusicPlayer.jsx";
 import { Search, Users, TrendingUp, X } from "lucide-react";
 
-const PROXY = "https://corsproxy.io/?";
-const DEEZER = "https://api.deezer.com";
-
 // Curated list of well-known artist IDs from Deezer
 const FEATURED_IDS = [
 	27, 13, 384236, 1118489, 246791, 75798, 9635624, 4050205, 7706891, 1424602,
@@ -90,12 +87,12 @@ export default function ArtistsPage() {
 		const fetchFeatured = async () => {
 			try {
 				const requests = FEATURED_IDS.map((id) =>
-					axios.get(`${PROXY}${DEEZER}/artist/${id}`),
+					axios.get(`/api/deezer/artist/${id}`),
 				);
 				const responses = await Promise.allSettled(requests);
 				const artists = responses
 					.filter((r) => r.status === "fulfilled")
-					.map((r) => r.value.data)
+					.map((r) => r.value.data.data)
 					.filter((a) => a && a.id);
 				setFeaturedArtists(artists);
 			} catch (err) {
@@ -128,7 +125,7 @@ export default function ArtistsPage() {
 
 		try {
 			const response = await axios.get(
-				`${PROXY}${DEEZER}/search/artist?q=${encodeURIComponent(term)}&limit=20`,
+				`/api/deezer/search/artist?q=${encodeURIComponent(term)}&limit=20`,
 				{ signal: controllerRef.current.signal },
 			);
 			setSearchResults(response.data?.data || []);

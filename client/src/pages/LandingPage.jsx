@@ -23,9 +23,6 @@ import { formatDuration } from "../utils/musicUtils";
 
 import TrackMenu from "@/components/TrackMenu";
 
-const PROXY = "https://corsproxy.io/?";
-const DEEZER = "https://api.deezer.com";
-
 function CardSkeleton() {
 	return (
 		<div className="rounded-2xl bg-zinc-900 border border-white/5 overflow-hidden animate-pulse shrink-0 w-44">
@@ -241,9 +238,9 @@ export default function LandingPage() {
 	useEffect(() => {
 		const fetchCharts = async () => {
 			const [tracksRes, playlistsRes, albumsRes] = await Promise.allSettled([
-				axios.get(`${PROXY}${DEEZER}/chart/0/tracks?limit=20`),
-				axios.get(`${PROXY}${DEEZER}/chart/0/playlists?limit=12`),
-				axios.get(`${PROXY}${DEEZER}/chart/0/albums?limit=12`),
+				axios.get("/api/deezer/chart/tracks?limit=20"),
+				axios.get("/api/deezer/chart/playlists?limit=12"),
+				axios.get("/api/deezer/chart/albums?limit=12"),
 			]);
 
 			if (tracksRes.status === "fulfilled") {

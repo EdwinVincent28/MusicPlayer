@@ -23,8 +23,6 @@ import { Badge } from "@/components/ui/badge";
 import { usePlayer } from "../context/PlayerContext.jsx";
 import { formatDuration, formatFans } from "../utils/musicUtils";
 
-const PROXY = "https://corsproxy.io/?";
-const DEEZER = "https://api.deezer.com";
 
 // function formatFans(n) {
 // 	if (!n) return "—";
@@ -183,7 +181,7 @@ function AlbumSection({ album, artistName }) {
 			setLoading(true);
 			try {
 				const res = await axios.get(
-					`${PROXY}${DEEZER}/album/${album.id}/tracks`,
+					`/api/deezer/album/${album.id}/tracks`,
 				);
 				setTracks(res.data?.data || []);
 			} catch (e) {
@@ -299,8 +297,8 @@ export default function ArtistPage() {
 		const fetch = async () => {
 			setLoading(true);
 			try {
-				const res = await axios.get(`${PROXY}${DEEZER}/artist/${id}`);
-				setArtist(res.data);
+				const res = await axios.get(`/api/deezer/artist/${id}`);
+				setArtist(res.data.data);
 			} catch (e) {
 				console.error("Failed to fetch artist", e);
 			} finally {
@@ -317,7 +315,7 @@ export default function ArtistPage() {
 			setTracksLoading(true);
 			try {
 				const res = await axios.get(
-					`${PROXY}${DEEZER}/artist/${id}/top?limit=10`,
+					`/api/deezer/artist/${id}/top?limit=10`,
 				);
 				setTopTracks(res.data?.data || []);
 			} catch (e) {
@@ -336,7 +334,7 @@ export default function ArtistPage() {
 			setAlbumsLoading(true);
 			try {
 				const res = await axios.get(
-					`${PROXY}${DEEZER}/artist/${id}/albums?limit=20`,
+					`/api/deezer/artist/${id}/albums?limit=20`,
 				);
 				setAlbums(res.data?.data || []);
 			} catch (e) {
