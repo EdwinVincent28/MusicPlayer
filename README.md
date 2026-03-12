@@ -1,3 +1,5 @@
+Live Hosted Site - https://musicplayerfrontend.onrender.com
+
 # 🎵 MusicPlayer
 
 A full-stack music streaming web application that lets users discover music, build playlists, and manage their library — powered by the public Deezer API with a custom backend layer for user-specific features.
