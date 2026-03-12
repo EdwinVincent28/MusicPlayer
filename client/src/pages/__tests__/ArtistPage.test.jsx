@@ -236,7 +236,6 @@ describe("ArtistPage", () => {
 	});
 
 	test("handles API failure gracefully", async () => {
-		// suppress expected console.error
 		const consoleSpy = jest
 			.spyOn(console, "error")
 			.mockImplementation(() => {});

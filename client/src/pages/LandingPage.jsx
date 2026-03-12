@@ -19,16 +19,12 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { usePlayer } from "../context/PlayerContext";
 import { jwtDecode } from "jwt-decode";
+import { formatDuration } from "../utils/musicUtils";
 
 import TrackMenu from "@/components/TrackMenu";
 
 const PROXY = "https://corsproxy.io/?";
 const DEEZER = "https://api.deezer.com";
-
-function formatDuration(secs) {
-	if (!secs) return "--:--";
-	return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
-}
 
 function CardSkeleton() {
 	return (
